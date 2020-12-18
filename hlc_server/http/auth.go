@@ -18,7 +18,7 @@ func loginFilter(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	if conf.GetConfig().Env == "test"{
 		pass = "test_hlc_wallet"
 	}else{
-		pass = "hlc_wa_298_k_98sw_z9hw_n13nc9ds"
+		pass = "3CuER2e73JBMyB1tjsyhL6zUNxxF1POt"
 	}
 
 	m, _ := url.ParseQuery(string(req.Body))
@@ -54,7 +54,7 @@ func loginFilterToBouns(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	if conf.GetConfig().Env == "test"{
 		pass = "test_hlc_wallet"
 	}else{
-		pass = "hlc_bouns_wallet_ap_m_98274_973"
+		pass = "HQcPJHDE6UR49iaEzCjkg9icuwMgWwrp"
 	}
 
 	m, _ := url.ParseQuery(string(req.Body))
