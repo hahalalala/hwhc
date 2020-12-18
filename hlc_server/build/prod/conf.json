@@ -10,11 +10,11 @@
   "ali_key_secret": "yotNyKCl2YLrOGvc7V5feY2WVQwH2b",
   "ali_bucket": "winsor-kyc",
   "mysql": {
-    "address": "database-mysql-shopxx.cin2s4jw2d4q.ap-east-1.rds.amazonaws.com",
+    "address": "rm-j6ce4b835mc32h6za.mysql.rds.aliyuncs.com",
     "port": 3306,
-    "dbName": "hl_wallet",
-    "user": "root",
-    "password": "vds6e!5f6*sv4e;lfg&hr",
+    "dbName": "hlc_wallet",
+    "user": "walletprod",
+    "password": "T3%gdTwpc2lrwdI*",
     "maxConn": 500,
     "maxIdle": 50
   },
