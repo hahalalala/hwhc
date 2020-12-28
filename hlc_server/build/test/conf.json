@@ -25,6 +25,5 @@
     "PoolSize": 3,
     "MaxRetries": 3,
     "IdleTimeout": 10
-  },
-
+  }
 }
