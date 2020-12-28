@@ -22,6 +22,7 @@ func init() {
 	http.HandleFunc("/", x_http.Service)
 }
 
+
 func initService() {
 	config := initConfig()
 	logger := initLog(config.Log)
@@ -35,6 +36,8 @@ func initService() {
 
 	//service.SetETHClient(ethClient)
 }
+
+
 
 func main() {
 	initService()
