@@ -20,7 +20,7 @@ func TransferXbb(userId int64, orderId string,status int64,txDesc string) (int, 
 	}
 
 	// 验证余额
-	trasfer := persistence.TransferbyOrderId(mysql.Get(), userId, persistence.IDR,orderId)
+	trasfer := persistence.TransferbyTxhash(mysql.Get(), userId, persistence.IDR,orderId)
 	if trasfer.Id == 0{
 		return -2002, "该笔交易不存在"
 	}
