@@ -38,22 +38,24 @@ func TransferXbb(userId int64, orderId string,status int64,txDesc string) (int, 
 		//失败退款
 		if !persistence.UpTransferStatus(xmysql, txDesc, userId, trasfer.Tx_hash, 0, -1) {
 			xmysql.Rollback()
-			log.Error("TransferXbb 失败退款 UpTransferStatus fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
+			log.Error("【1】TransferXbb 失败退款 UpTransferStatus fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
 			return -2004,"操作失败，刷新后重试"
 		}
 		if !persistence.AddUserAmount(xmysql, userId, trasfer.CoinId, 0-trasfer.Amount, 0) {
 			xmysql.Rollback()
-			log.Error("TransferXbb 失败退款 AddUserAmount fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
+			log.Error("【2】TransferXbb 失败退款 AddUserAmount fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
 			return -2005,"操作失败，刷新后重试"
 		}
 		if trasfer.IsShop > 0 {
 			if !persistence.AddUserAmount(xmysql, userId, persistence.USDT, trasfer.Fee, 0) {
 				xmysql.Rollback()
+				log.Error("【3】TransferXbb 失败退款手续费 AddUserAmount fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
 				return -2006,"操作失败，刷新后重试"
 			}
 		} else {
 			if !persistence.AddUserAmount(xmysql, userId, persistence.HLC, trasfer.Fee, 0) {
 				xmysql.Rollback()
+				log.Error("【4】TransferXbb 失败退款手续费 AddUserAmount fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
 				return -2007,"操作失败，刷新后重试"
 			}
 		}
