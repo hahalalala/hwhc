@@ -1,5 +1,6 @@
 env="prod"
 
+
 coderepo=${GOPATH}"/src/github.com/hwhc"  #代码仓库
 rundir=${GOPATH}"/src/github.com/hwhcrun" #运行文件夹
 bakdir=${GOPATH}"/src/github.com/hwhcrun" #备份文件夹
