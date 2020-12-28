@@ -10,6 +10,7 @@ import (
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
 	"github.com/hwhc/hlc_server/util"
+	"github.com/shopspring/decimal"
 	"math"
 	"strconv"
 	"time"
@@ -168,44 +169,59 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 		return x_resp.Fail(-1056, "币种id传输错误", nil), nil
 	}
 
-	xmysql := mysql.Begin()
-	defer xmysql.Commit()
-	// 验证余额    验证余额    验证余额
-
 	useramount := persistence.GetUserAmount(mysql.Get(), userId, cid_int)
 	userwtamount := persistence.GetUserAmount(mysql.Get(), userId, persistence.HLC)
-
 	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)   //0.3
 	usdtPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.USDT) //1
 	coinPrice := persistence.GetRealTimePrice(mysql.Get(), cid_int)          //1
-
 	transferFee:= Fee(cid_int) //写死的0.05改为动态的
-	wtFee := amount * transferFee * coinPrice / hlcPrice
+
+	rate:= decimal.NewFromFloat(transferFee).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(hlcPrice)).Truncate(8)
+	wtFee,exact :=rate.Mul(decimal.NewFromFloat(amount)).Float64()
+	if !exact {
+		log.Error(fmt.Sprintf("Transfer_wchat decimal fail orderId : %s ,cid_int:%d ,address:%s,amount:%.8f,userId:%d,isShop:%d,transferFee:%.8f,coinPrice:%.8f,hlcPrice:%.8f",
+			orderId, cid_int, address,amount,userId,is_shop,transferFee,coinPrice,hlcPrice))
+		return x_resp.Fail(-1057, "[1]手续费余额不足", nil), nil
+	}
+
 	fee_coin := persistence.HLC
 	if is_shop > 0 {
-		wtFee = amount * 0.01 * coinPrice / usdtPrice
-		fee_coin = persistence.USDT
-
+		shopRate := decimal.NewFromFloat(0.01).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(usdtPrice)).Truncate(8)
+		wtFee ,exact = decimal.NewFromFloat(amount).Mul(shopRate).Float64()
+		if !exact{
+			log.Error(fmt.Sprintf("[2]Transfer_wchat decimal fail orderId : %s ,cid_int:%d ,address:%s,amount:%.8f,userId:%d,isShop:%d,transferFee:%.8f,coinPrice:%.8f,hlcPrice:%.8f",
+				orderId, cid_int, address,amount,userId,is_shop,0.01,coinPrice,hlcPrice))
+			return x_resp.Fail(-1058, "[2]手续费余额不足", nil), nil
+		}
 		userwtamount = persistence.GetUserAmount(mysql.Get(), userId, persistence.USDT)
+		fee_coin = persistence.USDT
 	} else {
 		if wtFee < 100 {
 			wtFee = 100
 		}
 	}
 
-	if userwtamount < wtFee {
-		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
-		xmysql.Rollback()
-		return x_resp.Fail(-12, "手续费余额不足", nil), nil
+	wtFee,exact = decimal.NewFromFloat(wtFee).Truncate(5).Float64()
+	if !exact {
+		log.Error(fmt.Sprintf("[3]Transfer_wchat decimal fail orderId : %s ,cid_int:%d ,address:%s,amount:%.8f,userId:%d,isShop:%d,transferFee:%.8f,coinPrice:%.8f,hlcPrice:%.8f ,wtFee:%.8f",
+			orderId, cid_int, address,amount,userId,is_shop,0.01,coinPrice,hlcPrice,wtFee))
+		return x_resp.Fail(-1059, "[3]手续费余额不足", nil), nil
 	}
 
+
+	if userwtamount < wtFee {
+		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
+		return x_resp.Fail(-12, "手续费余额不足", nil), nil
+	}
 	if useramount < amount {
 		log.Error("Transfer_wchat 查询用户余额不足,用户ID:%s,币种：%s,余额：%s", userId, cid_int, useramount)
 		fmt.Println("Transfer_wchat 查询用户余额不足,用户ID:%s,币种：%s,余额：%s", userId, cid_int, useramount)
-		xmysql.Rollback()
 		return x_resp.Fail(-1003, "账户余额不足", nil), nil
 	}
 
+
+	xmysql := mysql.Begin()
+	defer xmysql.Commit()
 	if !(persistence.SaveTransfer(xmysql, userId, types.TRANSFER, cid_int, 0-amount, address, types.AMOUNT, orderId, wtFee, "", 0, is_shop) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer Transfer_wchat 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
