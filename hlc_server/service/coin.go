@@ -176,6 +176,7 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 	coinPrice := persistence.GetRealTimePrice(mysql.Get(), cid_int)          //1
 	transferFee:= Fee(cid_int) //写死的0.05改为动态的
 
+	//wtFee := amount * transferFee * coinPrice / hlcPrice
 	rate:= decimal.NewFromFloat(transferFee).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(hlcPrice)).Truncate(8)
 	wtFee,exact :=rate.Mul(decimal.NewFromFloat(amount)).Float64()
 	if !exact {
@@ -186,6 +187,9 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 
 	fee_coin := persistence.HLC
 	if is_shop > 0 {
+
+		//wtFee = amount * 0.01 * coinPrice / usdtPrice
+
 		shopRate := decimal.NewFromFloat(0.01).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(usdtPrice)).Truncate(8)
 		wtFee ,exact = decimal.NewFromFloat(amount).Mul(shopRate).Float64()
 		if !exact{
@@ -201,19 +205,18 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 		}
 	}
 
-	wtFee,exact = decimal.NewFromFloat(wtFee).Truncate(5).Float64()
+	wtFee,exact = decimal.NewFromFloat(wtFee).Truncate(5).Float64() //保留5位
 	if !exact {
 		log.Error(fmt.Sprintf("[3]Transfer_wchat decimal fail orderId : %s ,cid_int:%d ,address:%s,amount:%.8f,userId:%d,isShop:%d,transferFee:%.8f,coinPrice:%.8f,hlcPrice:%.8f ,wtFee:%.8f",
 			orderId, cid_int, address,amount,userId,is_shop,0.01,coinPrice,hlcPrice,wtFee))
 		return x_resp.Fail(-1059, "[3]手续费余额不足", nil), nil
 	}
 
-
-	if userwtamount < wtFee {
+	if decimal.NewFromFloat(userwtamount).LessThan(decimal.NewFromFloat(wtFee)) { //userwtamount < wtFee
 		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
 		return x_resp.Fail(-12, "手续费余额不足", nil), nil
 	}
-	if useramount < amount {
+	if decimal.NewFromFloat(useramount).LessThan(decimal.NewFromFloat(amount)) { // useramount < amount
 		log.Error("Transfer_wchat 查询用户余额不足,用户ID:%s,币种：%s,余额：%s", userId, cid_int, useramount)
 		fmt.Println("Transfer_wchat 查询用户余额不足,用户ID:%s,币种：%s,余额：%s", userId, cid_int, useramount)
 		return x_resp.Fail(-1003, "账户余额不足", nil), nil
