@@ -17,16 +17,27 @@ func init() {
 	x_router.All("/admin/api/transfer_to",loginFilter, transfer_admin) //后台提现
 	x_router.All("/admin/api/transferCheck",loginFilter, transferCheck) //提现校验
 	x_router.All("/admin/api/take", loginFilter, takeRecording) //提现记录 预览统计	//Inside
-
+	x_router.All("/admin/api/auditXbbTransfer", loginFilter, auditXbbTransfer) //xbb提币审核接口
 }
 
+//xbb提币审核接口
+func auditXbbTransfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	orderId := req.MustGetString("order_id")
+	userId := req.MustGetInt64("user_id")
+	txDesc := req.MustGetString("tx_desc")
+	status := req.MustGetInt64("status")
+	code ,errmsg:= service.TransferXbb(userId,orderId,status,txDesc)
+	if code < 0{
+		return x_resp.Fail(code, "", errmsg), nil
+	}
+	return x_resp.Success(code), nil
+}
+
+//hoo提币驳回
 func transferGoBack(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	id := req.MustGetInt64("tran_id")
-	fmt.Println(id)
 	userId := req.MustGetInt64("user_id")
-	fmt.Println(userId)
 	txDesc := req.MustGetString("tx_desc")
-	fmt.Println(txDesc)
 	code := service.TransferGoBack(txDesc, userId, id)
 	if code < 0 {
 		return x_resp.Fail(code, "", nil), nil

@@ -178,10 +178,11 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)   //0.3
 	usdtPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.USDT) //1
 	coinPrice := persistence.GetRealTimePrice(mysql.Get(), cid_int)          //1
-	wtFee := amount * 0.05 * coinPrice / hlcPrice
+
+	transferFee:= Fee(cid_int) //写死的0.05改为动态的
+	wtFee := amount * transferFee * coinPrice / hlcPrice
 	fee_coin := persistence.HLC
 	if is_shop > 0 {
-
 		wtFee = amount * 0.01 * coinPrice / usdtPrice
 		fee_coin = persistence.USDT
 

@@ -57,6 +57,19 @@ func SaveTransfer(mysql *mysql.XMySQL, userId, types int64, coin_id int64, amoun
 	return id
 }
 
+
+func TransferbyOrderId(mysql *mysql.XMySQL, userId, cid int64,orderId string) types.Transfer {
+	sql := "SELECT `amount`,`fee`,`id`, `tx_hash`, tx_data ,`create_time`, coin_id,`type`, `address`, `tx_status` , `tx_desc`,memo,user_id FROM `transactions` WHERE `user_id` = ? AND `coin_id` = ? AND order_id = ? AND tx_status = 0 AND type = 2"
+	rows := mysql.QueryRow(sql, userId, cid, orderId)
+	var transfer types.Transfer
+	err := rows.Scan(&transfer.Amount, &transfer.Fee, &transfer.Id, &transfer.Tx_hash, &transfer.Tx_data, &transfer.CreateTime, &transfer.CoinId, &transfer.Type, &transfer.Address, &transfer.Tx_status, &transfer.TxDesc, &transfer.Memo, &transfer.UserId)
+
+	if err != nil {
+		log.Error(fmt.Sprintf("[debug]TransferbyId err ---err : %v userid:%d , cid:%d,orderId:%d", err, userId, cid, orderId))
+	}
+	return transfer
+}
+
 func TransferbyId(mysql *mysql.XMySQL, userId, transferId int64, cid int64) types.Transfer {
 	sql := "SELECT `amount`,`fee`,`id`, `tx_hash`, tx_data ,`create_time`, coin_id,`type`, `address`, `tx_status` , `tx_desc`,memo,user_id FROM `transactions` WHERE `user_id` = ? AND `coin_id` = ? and id = ? and tx_status = 0"
 

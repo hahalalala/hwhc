@@ -48,6 +48,7 @@ func main() {
 func getConfigFilePath() string {
 	args := os.Args
 	confPath := "conf.json"
+
 	if len(args) > 1 {
 		confPath = args[1]
 	}

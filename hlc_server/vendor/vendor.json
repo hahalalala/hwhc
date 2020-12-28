@@ -244,6 +244,12 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "4dtvf5xdG1INQUFNbABjj39Te/E=",
+			"path": "github.com/shopspring/decimal",
+			"revision": "8bd41ac55db38647a900721e3ff8dcbc0084e5a0",
+			"revisionTime": "2020-12-11T18:41:11Z"
+		},
+		{
 			"checksumSHA1": "k6zbR5hiI10hkWtiK91rIY5s5/E=",
 			"origin": "github.com/ethereum/go-ethereum/vendor/github.com/syndtr/goleveldb/leveldb",
 			"path": "github.com/syndtr/goleveldb/leveldb",
@@ -334,5 +340,5 @@
 			"revision": ""
 		}
 	],
-	"rootPath": "github.com/hwhc/hc"
+	"rootPath": "github.com/hwhc/hlc_server"
 }

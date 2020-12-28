@@ -9,6 +9,63 @@ import (
 	"strconv"
 )
 
+
+
+func TransferXbb(userId int64, orderId string,status int64,txDesc string) (int, string) {
+
+	//审核开关
+	auditCoinSwitch := persistence.GetConfig(mysql.Get(),persistence.AuditCoinKey)
+	if auditCoinSwitch != "on"{
+		return -2001, "系统维护中....."
+	}
+
+	// 验证余额
+	trasfer := persistence.TransferbyOrderId(mysql.Get(), userId, persistence.IDR,orderId)
+	if trasfer.Id == 0{
+		return -2002, "该笔交易不存在"
+	}
+
+	xmysql := mysql.Begin()
+
+	if status == 1 {
+		//成功、修改状态
+		if !persistence.UpdateTransferStatus(xmysql, trasfer.Tx_hash, trasfer.UserId) {
+			xmysql.Rollback()
+			log.Error("TransferXbb 成功 UpdateTransferStatus fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
+			return -2003, "操作失败，刷新后重试"
+		}
+	}else{
+		//失败退款
+		if !persistence.UpTransferStatus(xmysql, txDesc, userId, trasfer.Tx_hash, 0, -1) {
+			xmysql.Rollback()
+			log.Error("TransferXbb 失败退款 UpTransferStatus fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
+			return -2004,"操作失败，刷新后重试"
+		}
+		if !persistence.AddUserAmount(xmysql, userId, trasfer.CoinId, 0-trasfer.Amount, 0) {
+			xmysql.Rollback()
+			log.Error("TransferXbb 失败退款 AddUserAmount fail userId :%d ,orderId :%s  status:%d txDesc:%s",userId,orderId,status,txDesc)
+			return -2005,"操作失败，刷新后重试"
+		}
+		if trasfer.IsShop > 0 {
+			if !persistence.AddUserAmount(xmysql, userId, persistence.USDT, trasfer.Fee, 0) {
+				xmysql.Rollback()
+				return -2006,"操作失败，刷新后重试"
+			}
+		} else {
+			if !persistence.AddUserAmount(xmysql, userId, persistence.HLC, trasfer.Fee, 0) {
+				xmysql.Rollback()
+				return -2007,"操作失败，刷新后重试"
+			}
+		}
+	}
+
+	xmysql.Commit()
+
+	log.Info(fmt.Sprintf("TransferXbb success ,userId : %d ,orderId %s ,statys : %d ,txDesc :%s ",userId,orderId,status,txDesc))
+	return 0, ""
+}
+
+
 func Transfer_app(userId int64, transferId int64, cid int64, adminid string) (int, string) {
 
 	//审核开关

@@ -12,9 +12,9 @@
   "mysql": {
     "address": "127.0.0.1",
     "port": 3306,
-    "dbName": "hlc_wallet",
+    "dbName": "hw_wallet",
     "user": "root",
-    "password": "hlhwwallet961@@!Mysql",
+    "password": "root",
     "maxConn": 500,
     "maxIdle": 50
   },
