@@ -21,7 +21,7 @@ import (
 func ValidAddress() (*x_resp.XRespContainer, *x_err.XErr)  {
 
 	coinName := "ETH"
-	errAddress := make([]string,0)
+	//errAddress := make([]string,0)
 	list,err:= persistence.GetAddressList(mysql.Get())
 	if err !=nil{
 		fmt.Printf("GetTempAddressList err : %v",err)
@@ -31,12 +31,16 @@ func ValidAddress() (*x_resp.XRespContainer, *x_err.XErr)  {
 		for _, address := range list {
 			b := hoo.ValidAddress(address.Address,coinName)
 			if !b {
-				errAddress = append(errAddress,address.Address)
+				//errAddress = append(errAddress,address.Address)
+				fmt.Printf("地址异常 : %s",address.Address)
+				return x_resp.Fail(-101,address.Address,nil), nil
+			}else{
+				fmt.Printf("地址正常")
 			}
 		}
 	}
 
-	fmt.Printf("errAddress : %v",errAddress)
+	//fmt.Printf("errAddress : %v",errAddress)
 	return x_resp.Success("ok"), nil
 }
 
