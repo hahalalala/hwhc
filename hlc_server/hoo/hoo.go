@@ -55,6 +55,16 @@ type FooOrder struct {
 
 }
 
+type ValidAddressRes struct {
+	Code string `json:"code"`
+	Msg     string `json:"message"`
+	Data struct {
+		CoinName string `json:"coin_name"` //txHash
+		Address string `json:"address"` //hooNo
+	} `json:"data"`
+
+}
+
 const client_id = "VYs4aiKSg8HPDrgKt3bWThaNrk7294"
 const pass = "RkVNF18AxqgS9pGadH8czMjfCrpQmFaQx24GP5BrEqmUeyJgMh"
 const urls = "https://hoo.com"
@@ -199,4 +209,42 @@ func GetOrder(orderId string) FooOrder {
 	}
 
 	return fooOrder
+}
+
+
+func ValidAddress(address string,coinName string) bool {
+
+	if conf.GetConfig().Env == "test" {
+		return false
+	}
+
+	path := "/api/open/vip/v1/checkaddress"
+	params := url.Values{
+		"address": []string{address},
+		"client_id": []string{client_id},
+		"coin_name": []string{coinName},
+	}
+
+	param := fmt.Sprintf("address=%s&client_id=%s&coin_name=%s", address ,client_id, coinName)
+	sign := GetHmacCode(param)
+	body := fmt.Sprintf(`{"address": "%s","client_id": "%s", "coin_name": "%s" , "sign": "%s"}`,address, client_id, coinName, sign)
+
+	fmt.Printf("body : %s \n",body)
+	params["sign"] = []string{sign}
+	resp, err := util.HttpPost(urls+path, []byte(body))
+	if err != nil {
+		fmt.Printf("ValidAddress util.HttpPost err : %v ,resp : %s ，body：%s \n", err,string(resp),body)
+		log.Error(fmt.Sprintf("ValidAddress util.HttpPost err : %v ,resp : %s ，body：%s", err,string(resp),body))
+		return false
+	}
+
+	var validAddressRes ValidAddressRes
+	err = json.Unmarshal(resp, &validAddressRes)
+	if err != nil || validAddressRes.Code != "10000"  || validAddressRes.Data.Address != address{
+		fmt.Printf("ValidAddress util.HttpPost err : %v ,resp : %s ，body：%s ,validAddressRes : %v \n", err,string(resp),body,validAddressRes)
+		log.Error(fmt.Sprintf("ValidAddress util.HttpPost err : %v ,resp : %s ，body：%s ,validAddressRes : %v ", err,string(resp),body,validAddressRes))
+		return false
+	}
+
+	return true
 }

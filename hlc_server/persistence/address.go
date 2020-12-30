@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"fmt"
+	"github.com/hwhc/hlc_server/types"
 	"github.com/hwhc/hlc_server/hoo"
 	"github.com/hwhc/hlc_server/log"
 	"github.com/hwhc/hlc_server/mysql"
@@ -133,4 +134,26 @@ func SelRessIFUse(xmysql *mysql.XMySQL, coinName string, status int64) int64 {
 		return num
 	}
 	return num
+}
+
+//获取临时数据
+func GetAddressList(xmysql *mysql.XMySQL) ([]types.AddressPool,error) {
+
+	sql := "SELECT id,address,status,coinname,user_id FROM address_pool order by id asc"
+	rows,err := xmysql.Query(sql)
+	if err != nil{
+		return nil,err
+	}
+
+	var res = make([]types.AddressPool, 0)
+	for rows.Next() {
+		var addressPool types.AddressPool
+		err = rows.Scan(&addressPool.Id, &addressPool.Address,&addressPool.Status,&addressPool.Coinname,&addressPool.UserId)
+		if err != nil{
+			return nil,err
+		}
+		res = append(res, addressPool)
+	}
+
+	return res,nil
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/go-zhouxun/xutil/xtime"
 )
 
-const INTERVAL = 5 * time.Second
+const INTERVAL = 15 * time.Second
 
 func Start() {
 	go recordUSDT()

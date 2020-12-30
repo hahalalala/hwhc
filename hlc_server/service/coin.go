@@ -5,6 +5,7 @@ import (
 	"github.com/EducationEKT/xserver/x_err"
 	"github.com/EducationEKT/xserver/x_http/x_resp"
 	"github.com/EducationEKT/xserver/x_utils/x_random"
+	"github.com/hwhc/hlc_server/hoo"
 	"github.com/hwhc/hlc_server/log"
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
@@ -15,6 +16,30 @@ import (
 	"strconv"
 	"time"
 )
+
+
+func ValidAddress() (*x_resp.XRespContainer, *x_err.XErr)  {
+
+	coinName := "ETH"
+	errAddress := make([]string,0)
+	list,err:= persistence.GetAddressList(mysql.Get())
+	if err !=nil{
+		fmt.Printf("GetTempAddressList err : %v",err)
+		return x_resp.Fail(-1,"fail",nil), nil
+	}
+	if len(list) > 0 {
+		for _, address := range list {
+			b := hoo.ValidAddress(address.Address,coinName)
+			if !b {
+				errAddress = append(errAddress,address.Address)
+			}
+		}
+	}
+
+	fmt.Printf("errAddress : %v",errAddress)
+	return x_resp.Success("ok"), nil
+}
+
 
 func GetFuTou() (*x_resp.XRespContainer, *x_err.XErr) {
 

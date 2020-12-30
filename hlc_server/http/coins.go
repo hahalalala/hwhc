@@ -31,6 +31,14 @@ func init() {
 	x_router.Get("/user/api/coins/amountToFrozen", loginFilter, AddFrozenToAmount) //加冻结减可用
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 
+	x_router.Get("/user/api/coins/ValidAddress", validAddress)            //校验地址
+
+}
+
+
+//获取单笔交易信息
+func validAddress(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	return service.ValidAddress()
 }
 
 //获取单笔交易信息
