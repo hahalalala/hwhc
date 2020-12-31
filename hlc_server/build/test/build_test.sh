@@ -26,5 +26,6 @@ echo "build finish"
 #重启服务
 /bin/systemctl restart supervisord
 
+rm -rf /root/go/src/github.com/hwhc
 
 echo "deploy success"
