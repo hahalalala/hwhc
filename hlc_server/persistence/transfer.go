@@ -195,7 +195,7 @@ func TransferCount(mysql *mysql.XMySQL, userId, coin_id int64, types int64) int6
 }
 
 func TakeRecordingNum(xmysql *mysql.XMySQL, is_shop int64) int64 {
-	sql := "SELECT count(1) FROM transactions  WHERE id > 0  AND tx_status = 0  and is_shop = ?"
+	sql := "SELECT count(1) FROM transactions  WHERE id > 0  AND tx_status = 0  and is_shop = ? and coin_id != "+strconv.Itoa(IDR)
 
 	rows := xmysql.QueryRow(sql, is_shop)
 	var number int64
@@ -221,7 +221,7 @@ func SelIdTransfer(xmysql *mysql.XMySQL, Id int64) types.Transfer {
 }
 
 func TakeRecording(xmysql *mysql.XMySQL, start, end int64, is_shop int64) []types.Transfer {
-	sql := "SELECT `id`,`user_id`,`amount`,`address`,`tx_data`,`tx_hash`,`tx_status`,`type`,`create_time`,`fee` ,IFNULL(`update_time`,'0'),coin_id FROM `transactions` WHERE `id` > 0 and tx_status = 0  and is_shop = ? "
+	sql := "SELECT `id`,`user_id`,`amount`,`address`,`tx_data`,`tx_hash`,`tx_status`,`type`,`create_time`,`fee` ,IFNULL(`update_time`,'0'),coin_id FROM `transactions` WHERE `id` > 0 and tx_status = 0  and is_shop = ?  and coin_id != "+strconv.Itoa(IDR)
 	sql = sql + " ORDER BY id DESC LIMIT " + strconv.Itoa(int(start)) + ", " + strconv.Itoa(int(end))
 	rows, err := xmysql.Query(sql, is_shop)
 	if err != nil {
