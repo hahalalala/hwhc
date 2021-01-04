@@ -73,8 +73,8 @@ func AddExchangeRecord(exchange_id int64, num float64, userId int64, orderId str
 	defer xmysqlBegin.Commit()
 	if persistence.ReduceUserAmount(xmysqlBegin, userId, persistence.HLC, wtCost) { //减手续费
 
-		//手续费记录
-		if !(persistence.SaveTransfer(xmysqlBegin, userId, types.Fee, persistence.HLC, 0-wtCost, "", types.AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+		//手续费记录 finish
+		if !(persistence.SaveTransfer(xmysqlBegin, userId, types.Fee, persistence.HLC, 0-wtCost, "", types.AMOUNT, orderId, 0, "", 1, 0,hlc_price) > 0) { //添加提现记录
 			xmysqlBegin.Rollback()
 			log.Error("Transfer 闪兑 扣取手续费 用户id：%s,币种类型 %s,扣取数量 %s", userId, persistence.HLC, wtCost)
 			//	return  //转账失败
@@ -84,16 +84,16 @@ func AddExchangeRecord(exchange_id int64, num float64, userId int64, orderId str
 		if persistence.ReduceUserAmount(xmysqlBegin, userId, exchange.PayCoinId, num) { //减支付币种
 			if persistence.AddExchangeRecord(xmysqlBegin, exchange.Id, num, return_num, exchange.Price, exchange.Name, userId, wtCost, paycoins.Sortname, returncoins.Sortname, exchange.Id) { //添加闪兑记录
 				if persistence.AddUserAmount(xmysqlBegin, userId, exchange.ReturnCoinId, return_num, 0) { //增加闪兑获得的币种数量
-					//添加支付币种记录
-					if !(persistence.SaveTransfer(xmysqlBegin, userId, types.FLASH_EXCHANGE, exchange.PayCoinId, 0-num, "", types.AMOUNT, orderId, wtCost, "", 1, 0) > 0) { //添加提现记录
+					//添加支付币种记录 finish
+					if !(persistence.SaveTransfer(xmysqlBegin, userId, types.FLASH_EXCHANGE, exchange.PayCoinId, 0-num, "", types.AMOUNT, orderId, wtCost, "", 1, 0,hlc_price) > 0) { //添加提现记录
 						xmysqlBegin.Rollback()
 						log.Error("Transfer 闪兑 支付币种添加数量到账用户id：%s,币种类型 %s,扣取数量 %s", userId, exchange.PayCoinId, num)
 						//	return  //转账失败
 						return x_resp.Fail(-1011, "转账失败", nil), nil
 					}
 
-					//添加支付币种记录
-					if !(persistence.SaveTransfer(xmysqlBegin, userId, types.FLASH_EXCHANGE, exchange.ReturnCoinId, return_num, "", types.AMOUNT, orderId, wtCost, "", 1, 0) > 0) { //添加提现记录
+					//添加支付币种记录 finish
+					if !(persistence.SaveTransfer(xmysqlBegin, userId, types.FLASH_EXCHANGE, exchange.ReturnCoinId, return_num, "", types.AMOUNT, orderId, wtCost, "", 1, 0,hlc_price) > 0) { //添加提现记录
 						xmysqlBegin.Rollback()
 						log.Error("Transfer 闪兑 支付币种添加数量到账用户id：%s,币种类型 %s,扣取数量 %s", userId, exchange.ReturnCoinId, num)
 						//	return  //转账失败

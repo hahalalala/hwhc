@@ -23,11 +23,14 @@ func Recharge(address string, amount float64, txHash string, coinname string) {
 		userId = GetUserIdByAddress(coininfo.Sortname, address)
 	}
 	fmt.Println("userId", userId)
+
+	hlcPrice := persistence.GetRealTimePrice(mysql.Get(),persistence.HLC)
+
 	if userId > 0 {
 		fmt.Print("---找到  %s", userId, "  ", address)
 		xmysql := mysql.Begin()
 		defer xmysql.Commit()
-		if persistence.SaveTransfer(xmysql, userId, types.RECHARGE, coinid, amount, address, types.AMOUNT, txHash, 0, "", 1, 0) > 0 {
+		if persistence.SaveTransfer(xmysql, userId, types.RECHARGE, coinid, amount, address, types.AMOUNT, txHash, 0, "", 1, 0,hlcPrice) > 0 {
 			//coinid := persistence.GetCoinIdforName(xmysql, coinname) //查询币种类型ID、
 			if coinid > 0 {
 				if !persistence.AddUserAmount(xmysql, userId, coinid, amount, 0) {

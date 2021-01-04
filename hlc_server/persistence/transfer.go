@@ -41,10 +41,10 @@ func GetFreeRechargeLastTime(mysql *mysql.XMySQL, userId, coinId int64) string {
 	return lastTime
 }
 
-func SaveTransfer(mysql *mysql.XMySQL, userId, types int64, coin_id int64, amount float64, address string, data string, tx string, fee float64, memo string, status int64, is_shop int64) int64 {
-	sql := "INSERT INTO `transactions`(`user_id`, `amount`, `type`, coin_id ,`address`, `tx_data`, `tx_hash`,create_time,`fee`,memo,tx_status,is_shop) VALUES(?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?)"
+func SaveTransfer(mysql *mysql.XMySQL, userId, types int64, coin_id int64, amount float64, address string, data string, tx string, fee float64, memo string, status int64, is_shop int64,mpPrice float64) int64 {
+	sql := "INSERT INTO `transactions`(`user_id`, `amount`, `type`, coin_id ,`address`, `tx_data`, `tx_hash`,create_time,`fee`,memo,tx_status,is_shop,mp_price) VALUES(?, ?, ?, ?, ?, ?, ?, ? ,?,?,?,?,?)"
 
-	result, err := mysql.Exec(sql, userId, amount, types, coin_id, address, data, tx, xtime.TodayDateTimeStr(), fee, memo, status, is_shop)
+	result, err := mysql.Exec(sql, userId, amount, types, coin_id, address, data, tx, xtime.TodayDateTimeStr(), fee, memo, status, is_shop,mpPrice)
 	if err != nil {
 		fmt.Print("SaveTransfer insert ", err)
 		return -3

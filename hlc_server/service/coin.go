@@ -10,7 +10,6 @@ import (
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
-	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"math"
 	"strconv"
@@ -97,38 +96,6 @@ func GetTransfer(txHash string, typ int64) (*x_resp.XRespContainer, *x_err.XErr)
 
 //扣除系统脚本充值 "一定时间 : spaceTime" 未使用的金额
 func ReduceFreeRecharge(coinId, spaceTime int64) (*x_resp.XRespContainer, *x_err.XErr) {
-
-	userAmountList := persistence.GetHasPriceUserAmountList(mysql.Get(), coinId)
-	if len(userAmountList) > 0 {
-		for _, userAmount := range userAmountList {
-			lastTime := persistence.GetFreeRechargeLastTime(mysql.Get(), userAmount.UserId, coinId)
-			if len(lastTime) == 0 {
-				continue
-			}
-			loc, _ := time.LoadLocation("Asia/Shanghai")        //设置时区
-			tm, err := time.ParseInLocation("2006-01-02 15:04:05", lastTime, loc)
-			if err != nil {
-				log.Error("ReduceFreeRecharge Parse lastTime err : %v ,userid:%d,coinId:%d,lastTime:%s", err, userAmount.UserId, coinId, lastTime)
-				continue
-			}
-			lastTimeTimestamp := tm.Unix() //获取最后一条记录时间
-			finalLastTimeTimestamp :=  lastTimeTimestamp + spaceTime //加上这个间隔时间
-			now := time.Now().Unix()
-			if finalLastTimeTimestamp <= now {
-				//超过spaceTime间隔时间了,扣除账户所有
-				orderId := fmt.Sprintf("扣除未使用的系统充值额度-%d-%s", userAmount.UserId, util.Krand(8, util.KC_RAND_KIND_ALL))
-				_, err := ReAmount(userAmount.UserId, userAmount.Amount, orderId, types.REDUCE_SYSTEM_SCRIPT_FREE_RECHARGE, coinId, 0)
-				if err != nil {
-					log.Error("扣除未使用的系统充值额度 失败 userId:%d,amount:%.8f")
-				} else {
-					log.Info("扣除成功 coinid:%d , userid:%d ,amount:%f", coinId, userAmount.UserId, userAmount.Amount)
-				}
-			} else {
-				log.Info("未到时间 coinid:%d , userid:%d ,amount:%f", coinId, userAmount.UserId, userAmount.Amount)
-			}
-		}
-	}
-
 	return x_resp.Success(0), nil
 }
 
@@ -238,7 +205,8 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 
 	xmysql := mysql.Begin()
 	defer xmysql.Commit()
-	if !(persistence.SaveTransfer(xmysql, userId, types.TRANSFER, cid_int, 0-amount, address, types.AMOUNT, orderId, wtFee, "", 0, is_shop) > 0) { //添加提现记录
+	//finish
+	if !(persistence.SaveTransfer(xmysql, userId, types.TRANSFER, cid_int, 0-amount, address, types.AMOUNT, orderId, wtFee, "", 0, is_shop,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer Transfer_wchat 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -252,8 +220,8 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 		return x_resp.Fail(-1007, "余额不足", nil), nil
 	}
 
-	//手续费记录
-	if !(persistence.SaveTransfer(xmysql, userId, types.Fee, int64(fee_coin), 0-wtFee, "", types.AMOUNT, orderId, 0, "", 0, is_shop) > 0) { //添加提现记录
+	//手续费记录 finish
+	if !(persistence.SaveTransfer(xmysql, userId, types.Fee, int64(fee_coin), 0-wtFee, "", types.AMOUNT, orderId, 0, "", 0, is_shop,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer 内部转账 扣取手续费 到账用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
 		//	return  //转账失败
@@ -302,8 +270,8 @@ func Transfer_otc(orderId string, cid_int int64, amount float64, userId int64, m
 		xmysql.Rollback()
 		return x_resp.Fail(-1003, "账户余额不足", nil), nil
 	}
-
-	if !(persistence.SaveTransfer(xmysql, userId, types.OTC_TRANSFER, cid_int, 0-amount, "", types.AMOUNT, orderId, wtFee, "", 0, is_shop) > 0) { //添加提现记录
+	//finish
+	if !(persistence.SaveTransfer(xmysql, userId, types.OTC_TRANSFER, cid_int, 0-amount, "", types.AMOUNT, orderId, wtFee, "", 0, is_shop,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer Transfer_wchat 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -317,8 +285,8 @@ func Transfer_otc(orderId string, cid_int int64, amount float64, userId int64, m
 		return x_resp.Fail(-1007, "余额不足", nil), nil
 	}
 
-	//手续费记录
-	if !(persistence.SaveTransfer(xmysql, userId, types.Fee, int64(fee_coin), 0-wtFee, "", types.AMOUNT, orderId, 0, "", 0, is_shop) > 0) { //添加提现记录
+	//手续费记录finish
+	if !(persistence.SaveTransfer(xmysql, userId, types.Fee, int64(fee_coin), 0-wtFee, "", types.AMOUNT, orderId, 0, "", 0, is_shop,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer 内部转账 扣取手续费 到账用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
 		//	return  //转账失败
@@ -348,7 +316,8 @@ func Transfer(userId, coin_id int64, amount float64, re_userId int64, sortname s
 	if amount <= 0 {
 		return x_resp.Fail(-1000, "转账金额有误", nil), nil
 	}
-	hlcPrice := 1.1
+	//hlcPrice := 1.1
+	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)
 	coinprice := 1.0
 
 	wtRate := 0.0 // 0.003
@@ -370,8 +339,8 @@ func Transfer(userId, coin_id int64, amount float64, re_userId int64, sortname s
 			log.Error("Transfer 内部转账 扣取余额失败 用户id：%s,币种类型 %s,扣取数量 %s", userId, coin_id, amount)
 		}
 
-		//手续费记录
-		if !(persistence.SaveTransfer(xmysql, userId, types.Fee, coin_id, 0-wtFee, "", types.AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+		//手续费记录finish
+		if !(persistence.SaveTransfer(xmysql, userId, types.Fee, coin_id, 0-wtFee, "", types.AMOUNT, orderId, 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 			xmysql.Rollback()
 			log.Error("Transfer 内部转账 扣取手续费 到账用户id：%s,币种类型 %s,扣取数量 %s", re_userId, coin_id, amount)
 			//	return  //转账失败
@@ -392,15 +361,15 @@ func Transfer(userId, coin_id int64, amount float64, re_userId int64, sortname s
 		log.Error("Transfer 内部转账 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", re_userId, coin_id, amount)
 		return x_resp.Fail(-1016, "转账失败", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userId, types.IN_TRANSFER, coin_id, 0-amount, strconv.FormatInt(re_userId, 10), types.AMOUNT, orderId, wtFee, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userId, types.IN_TRANSFER, coin_id, 0-amount, strconv.FormatInt(re_userId, 10), types.AMOUNT, orderId, wtFee, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer 内部转账 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", re_userId, coin_id, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
 	}
 
-	//存储内部转账信息_入账
-	if persistence.SaveTransfer(xmysql, re_userId, types.IN_TRANSFER, coin_id, amount, "", types.AMOUNT, orderId, wtFee, "", 1, 0) > 0 {
+	//存储内部转账信息_入账 finish
+	if persistence.SaveTransfer(xmysql, re_userId, types.IN_TRANSFER, coin_id, amount, "", types.AMOUNT, orderId, wtFee, "", 1, 0,hlcPrice) > 0 {
 		return x_resp.Success(0), nil
 	} else {
 		xmysql.Rollback()
@@ -410,7 +379,7 @@ func Transfer(userId, coin_id int64, amount float64, re_userId int64, sortname s
 
 }
 
-func AddAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64) (*x_resp.XRespContainer, *x_err.XErr) {
+func AddAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64 ,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -432,8 +401,8 @@ func AddAmount(userid int64, amount float64, orderId string, typess int64, coinI
 		log.Error("Transfer AddAmount 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1016, "转账失败", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.AMOUNT, orderId, 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddAmount 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -441,7 +410,7 @@ func AddAmount(userid int64, amount float64, orderId string, typess int64, coinI
 	return x_resp.Success(0), nil
 }
 
-func ReAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64) (*x_resp.XRespContainer, *x_err.XErr) {
+func ReAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -458,8 +427,8 @@ func ReAmount(userid int64, amount float64, orderId string, typess int64, coinId
 		log.Error("Transfer ReAmount 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1003, "余额不足", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, is_shop) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, is_shop,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer ReAmount 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -468,7 +437,7 @@ func ReAmount(userid int64, amount float64, orderId string, typess int64, coinId
 	return x_resp.Success(0), nil
 }
 
-func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64) (*x_resp.XRespContainer, *x_err.XErr) {
+func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -485,8 +454,8 @@ func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int6
 		log.Error("Transfer AddFrozenToAmount 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1016, "转账失败", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.FROZEN_AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.FROZEN_AMOUNT, orderId, 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozenToAmount 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -498,8 +467,8 @@ func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int6
 		log.Error("Transfer AddFrozenToAmount 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1003, "余额不足", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozenToAmount 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -508,7 +477,7 @@ func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int6
 	return x_resp.Success(0), nil
 }
 
-func ShopTranfer(userid int64, amount float64, orderId string, typess int64, coinId int64, shop_user_id int64, shop_amout float64) (*x_resp.XRespContainer, *x_err.XErr) {
+func ShopTranfer(userid int64, amount float64, orderId string, typess int64, coinId int64, shop_user_id int64, shop_amout float64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -525,8 +494,8 @@ func ShopTranfer(userid int64, amount float64, orderId string, typess int64, coi
 		log.Error("Transfer AddFrozen 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", shop_user_id, persistence.USDT, shop_amout)
 		return x_resp.Fail(-1016, "转账失败", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, shop_user_id, typess, persistence.USDT, shop_amout, "", types.AMOUNT, orderId, 0, "", 1, 1) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, shop_user_id, typess, persistence.USDT, shop_amout, "", types.AMOUNT, orderId, 0, "", 1, 1,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", shop_user_id, persistence.USDT, shop_amout)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -538,8 +507,8 @@ func ShopTranfer(userid int64, amount float64, orderId string, typess int64, coi
 		log.Error("Transfer AddFrozen 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1003, "余额不足", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -548,7 +517,7 @@ func ShopTranfer(userid int64, amount float64, orderId string, typess int64, coi
 	return x_resp.Success(0), nil
 }
 
-func MergeCoinns(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64, re_coin_id int64, re_amount float64) (*x_resp.XRespContainer, *x_err.XErr) {
+func MergeCoinns(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64, re_coin_id int64, re_amount float64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -566,8 +535,8 @@ func MergeCoinns(userid int64, amount float64, orderId string, typess int64, coi
 			log.Error("Transfer MergeCoinns 减用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 			return x_resp.Fail(-1016, "余额不足", nil), nil
 		}
-		//存储内部转账信息_出账
-		if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+		//存储内部转账信息_出账 finish
+		if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.AMOUNT, orderId, 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 			xmysql.Rollback()
 			log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 			return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -581,8 +550,8 @@ func MergeCoinns(userid int64, amount float64, orderId string, typess int64, coi
 			log.Error("Transfer MergeCoinns _2  添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, re_coin_id, re_amount)
 			return x_resp.Fail(-1003, "余额不足", nil), nil
 		}
-		//存储内部转账信息_出账
-		if !(persistence.SaveTransfer(xmysql, userid, typess, re_coin_id, 0-re_amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0) > 0) { //添加提现记录
+		//存储内部转账信息_出账 finish
+		if !(persistence.SaveTransfer(xmysql, userid, typess, re_coin_id, 0-re_amount, "", types.AMOUNT, orderId+"_1", 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 			xmysql.Rollback()
 			log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 			return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -592,7 +561,7 @@ func MergeCoinns(userid int64, amount float64, orderId string, typess int64, coi
 	return x_resp.Success(0), nil
 }
 
-func AddAmounToFrozen(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64) (*x_resp.XRespContainer, *x_err.XErr) {
+func AddAmounToFrozen(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	coininfo := persistence.GetCoinByCoinId(mysql.Get(), coinId)
 
@@ -609,8 +578,8 @@ func AddAmounToFrozen(userid int64, amount float64, orderId string, typess int64
 		log.Error("Transfer AddFrozen 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1016, "转账失败", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.AMOUNT, orderId, 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, amount, "", types.AMOUNT, orderId, 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -622,8 +591,8 @@ func AddAmounToFrozen(userid int64, amount float64, orderId string, typess int64
 		log.Error("Transfer AddFrozen 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1003, "余额不足", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.FROZEN_AMOUNT, orderId+"_1", 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.FROZEN_AMOUNT, orderId+"_1", 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer AddFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil
@@ -639,6 +608,7 @@ func ReFrozen(userid int64, amount float64, orderId string, typess int64, coinId
 	if coininfo.Sortname == "" {
 		return x_resp.Fail(-1056, "币种id传输错误", nil), nil
 	}
+	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)
 
 	xmysql := mysql.Begin()
 	defer xmysql.Commit()
@@ -649,8 +619,8 @@ func ReFrozen(userid int64, amount float64, orderId string, typess int64, coinId
 		log.Error("Transfer ReFrozen 添加用户资产失败 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1003, "余额不足", nil), nil
 	}
-	//存储内部转账信息_出账
-	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.FROZEN_AMOUNT, orderId+"_1", 0, "", 1, 0) > 0) { //添加提现记录
+	//存储内部转账信息_出账 finish
+	if !(persistence.SaveTransfer(xmysql, userid, typess, coinId, 0-amount, "", types.FROZEN_AMOUNT, orderId+"_1", 0, "", 1, 0,hlcPrice) > 0) { //添加提现记录
 		xmysql.Rollback()
 		log.Error("Transfer ReFrozen 保存用户提现信息 到账用户id：%s,币种类型 %s,扣取数量 %s", userid, coinId, amount)
 		return x_resp.Fail(-1014, "转账失败", nil), nil

@@ -134,13 +134,14 @@ func reAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	t := req.MustGetInt64("types")
 	amount := req.MustGetFloat64("amount")
 	is_shop := req.MustGetInt64("is_shop")
+	hlcPay := req.MustGetFloat64("mp_price")
 
 	if amount<0 {
 		log.Info(fmt.Sprintf("资产金额异常 userid: %d ,orderid:%s,amount:%.8f",userid,orderid,amount))
 		return x_resp.Fail(-1017,"资产金额异常",nil), nil
 	}
 
-	return service.ReAmount(userid, amount, orderid, t, coinid, is_shop)
+	return service.ReAmount(userid, amount, orderid, t, coinid, is_shop,hlcPay)
 }
 
 func add(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -151,8 +152,9 @@ func add(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	amount := req.MustGetFloat64("amount")
 
 	is_shop := req.MustGetInt64("is_shop")
+	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddAmount(userid, amount, orderid, t, coinid, is_shop)
+	return service.AddAmount(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
 }
 
 func AddFrozenToAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -162,8 +164,9 @@ func AddFrozenToAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	t := req.MustGetInt64("types")
 	amount := req.MustGetFloat64("amount")
 	is_shop := req.MustGetInt64("is_shop")
+	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddFrozenToAmount(userid, amount, orderid, t, coinid, is_shop)
+	return service.AddFrozenToAmount(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
 }
 
 func shopTranfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -174,8 +177,9 @@ func shopTranfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	t := req.MustGetInt64("types")
 	amount := req.MustGetFloat64("amount")
 	to_shop_amount := req.MustGetFloat64("to_shop_amount")
+	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.ShopTranfer(userid, amount, orderid, t, coinid, shop_user_id, to_shop_amount)
+	return service.ShopTranfer(userid, amount, orderid, t, coinid, shop_user_id, to_shop_amount,hlcPrice)
 }
 
 func mergeCoinns(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -186,10 +190,10 @@ func mergeCoinns(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	t := req.MustGetInt64("types")
 	amount := req.MustGetFloat64("amount")
 	re_amount := req.MustGetFloat64("re_amount")
-
 	is_shop := req.MustGetInt64("is_shop")
+	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.MergeCoinns(userid, amount, orderid, t, coinid, is_shop, re_coin_id, re_amount)
+	return service.MergeCoinns(userid, amount, orderid, t, coinid, is_shop, re_coin_id, re_amount,hlcPrice)
 }
 
 func toFrozen(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -198,10 +202,10 @@ func toFrozen(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	orderid := req.MustGetString("order_id")
 	t := req.MustGetInt64("types")
 	amount := req.MustGetFloat64("amount")
-
 	is_shop := req.MustGetInt64("is_shop")
+	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddAmounToFrozen(userid, amount, orderid, t, coinid, is_shop)
+	return service.AddAmounToFrozen(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
 }
 
 func coinList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
