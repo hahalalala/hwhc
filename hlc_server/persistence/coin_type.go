@@ -150,6 +150,14 @@ func GetRealTimePrice(xmysql *mysql.XMySQL, t int64) float64 {
 	return price
 }
 
+func GetPriceByDate(xmysql *mysql.XMySQL, t int64,date string) float64 {
+	sql := "SELECT `price` FROM `price` WHERE `type` = ? and date_str = ? ORDER BY `id` DESC LIMIT 1"
+	row := xmysql.QueryRow(sql, t,date)
+	price := float64(0)
+	_ = row.Scan(&price)
+	return price
+}
+
 func GetHLCPrice() (hlcPrice ,idrPrice ,vndPrice float64) {
 
 	var url string

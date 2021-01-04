@@ -13,10 +13,10 @@ import (
 
 func init() {
 
-	x_router.Get("/user/api/getTransfer", loginFilter,getTransfer)                             //根据orderid，类型查询交易记录
-	x_router.Get("/user/api/reduceFreeChargeHL",reduceFreeChargeHL)               //扣除未使用的hl
+	x_router.Get("/user/api/getTransfer", loginFilter, getTransfer)                //根据orderid，类型查询交易记录
+	x_router.Get("/user/api/reduceFreeChargeHL", reduceFreeChargeHL)               //扣除未使用的hl
 	x_router.Get("/user/api/transfer", loginFilter, transfer)                      //提现 内部转账
-	x_router.Get("/user/api/transfer/list", loginFilter,transferList)             //提现/转账记录
+	x_router.Get("/user/api/transfer/list", loginFilter, transferList)             //提现/转账记录
 	x_router.Get("/user/api/coins/coinList", loginFilter, coinList)                //获取用户币种余额
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.All("/user/api/transfer_out", loginFilter, transfer_wchat)            //提现
@@ -30,11 +30,16 @@ func init() {
 	x_router.Get("/user/api/coins/shopTranfer", loginFilter, shopTranfer)          //商家转账接口
 	x_router.Get("/user/api/coins/amountToFrozen", loginFilter, AddFrozenToAmount) //加冻结减可用
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
-
-	x_router.Get("/user/api/coins/ValidAddress", validAddress)            //校验地址
+	x_router.Get("/user/api/coins/ValidAddress", validAddress)                     //校验地址
+	x_router.Get("/user/api/coins/getMPIncr", getMPIncr)                           //获取增值
 
 }
 
+//获取增值
+func getMPIncr(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	userId := req.MustGetInt64("user_id")
+	return service.GetMPIncr(userId)
+}
 
 //获取单笔交易信息
 func validAddress(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -52,7 +57,7 @@ func getTransfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 func reduceFreeChargeHL(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	log.Error("start reduceFreeChargeHL")
 
-	var coindId int64 = 62         //req.MustGetInt64("coinId")	//币种id
+	var coindId int64 = 62        //req.MustGetInt64("coinId")	//币种id
 	var spaceTime int64 = 2592000 //req.MustGetInt64("spaceTime") //失效时间，间隔s eg：86400是一天
 	return service.ReduceFreeRecharge(coindId, spaceTime)
 }
@@ -136,12 +141,12 @@ func reAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPay := req.MustGetFloat64("mp_price")
 
-	if amount<0 {
-		log.Info(fmt.Sprintf("资产金额异常 userid: %d ,orderid:%s,amount:%.8f",userid,orderid,amount))
-		return x_resp.Fail(-1017,"资产金额异常",nil), nil
+	if amount < 0 {
+		log.Info(fmt.Sprintf("资产金额异常 userid: %d ,orderid:%s,amount:%.8f", userid, orderid, amount))
+		return x_resp.Fail(-1017, "资产金额异常", nil), nil
 	}
 
-	return service.ReAmount(userid, amount, orderid, t, coinid, is_shop,hlcPay)
+	return service.ReAmount(userid, amount, orderid, t, coinid, is_shop, hlcPay)
 }
 
 func add(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -154,7 +159,7 @@ func add(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddAmount(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
+	return service.AddAmount(userid, amount, orderid, t, coinid, is_shop, hlcPrice)
 }
 
 func AddFrozenToAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -166,7 +171,7 @@ func AddFrozenToAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddFrozenToAmount(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
+	return service.AddFrozenToAmount(userid, amount, orderid, t, coinid, is_shop, hlcPrice)
 }
 
 func shopTranfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -179,7 +184,7 @@ func shopTranfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	to_shop_amount := req.MustGetFloat64("to_shop_amount")
 	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.ShopTranfer(userid, amount, orderid, t, coinid, shop_user_id, to_shop_amount,hlcPrice)
+	return service.ShopTranfer(userid, amount, orderid, t, coinid, shop_user_id, to_shop_amount, hlcPrice)
 }
 
 func mergeCoinns(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -193,7 +198,7 @@ func mergeCoinns(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.MergeCoinns(userid, amount, orderid, t, coinid, is_shop, re_coin_id, re_amount,hlcPrice)
+	return service.MergeCoinns(userid, amount, orderid, t, coinid, is_shop, re_coin_id, re_amount, hlcPrice)
 }
 
 func toFrozen(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -205,7 +210,7 @@ func toFrozen(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPrice := req.MustGetFloat64("mp_price")
 
-	return service.AddAmounToFrozen(userid, amount, orderid, t, coinid, is_shop,hlcPrice)
+	return service.AddAmounToFrozen(userid, amount, orderid, t, coinid, is_shop, hlcPrice)
 }
 
 func coinList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
@@ -265,7 +270,7 @@ func transferList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 		lastId = math.MaxInt64
 	}
 
-	data, count := service.GetTransferList(userId, coin_id,  size, types,lastId)
+	data, count := service.GetTransferList(userId, coin_id, size, types, lastId)
 	return x_resp.Success(map[string]interface{}{
 		"data":  data,
 		"count": count,

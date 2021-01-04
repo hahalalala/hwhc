@@ -10,11 +10,59 @@ import (
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
+	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"math"
 	"strconv"
 	"time"
 )
+
+//获取mp增值
+func GetMPIncr(userId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
+
+	result := make(map[string]float64,0)
+	result["todayMPIncr"] = getTodayMPIncr(userId)
+	result["totalMPIncr"] = getTotalMPIncr(userId)
+
+	return x_resp.Success("ok"), nil
+
+}
+
+//目前持有的MP昨日MP增值
+func getTodayMPIncr(userId int64)  float64 {
+	total := persistence.GetUserAmount(mysql.Get(),userId,persistence.HLC)
+	totalDecimal := decimal.NewFromFloat(total)
+	if totalDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)){
+		return 0
+	}
+
+	todayPrice := persistence.GetPriceByDate(mysql.Get(),persistence.HLC,util.Datestr())
+	yestdayPrice := persistence.GetPriceByDate(mysql.Get(),persistence.HLC,util.GetYestdayDateStr())
+
+	todayTotalDecimal := totalDecimal.Mul(decimal.NewFromFloat(todayPrice))
+	yestdayTotalDecimal := totalDecimal.Mul(decimal.NewFromFloat(yestdayPrice))
+
+	r,_ := todayTotalDecimal.Sub(yestdayTotalDecimal).Float64()
+
+	return r
+}
+
+//目前持有的MP昨日MP增值
+func getTotalMPIncr(userId int64)  float64 {
+
+	//初始
+	initMPRate := 0.1
+	totalPay := persistence.GetTotalPay(mysql.Get(),userId,persistence.HLC) //获取总支出
+	initRateTotalPayDecimal := decimal.NewFromFloat(initMPRate).Mul(decimal.NewFromFloat(totalPay))
+
+	//获取乘以汇率后总支出
+	afterRatetotalPay := persistence.GetTotalPayAfterRate(mysql.Get(),userId,persistence.HLC)
+	afterRatetotalPayDecimal := decimal.NewFromFloat(afterRatetotalPay)
+
+	r ,_ := afterRatetotalPayDecimal.Sub(initRateTotalPayDecimal).Float64()
+	return r
+}
+
 
 
 func ValidAddress() (*x_resp.XRespContainer, *x_err.XErr)  {
