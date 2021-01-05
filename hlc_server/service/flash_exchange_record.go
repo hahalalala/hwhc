@@ -18,7 +18,7 @@ func GetExchangeList() []types.FlashExchange {
 	return persistence.GetExchangeList(mysql.Get())
 }
 
-func AddExchangeRecord(exchange_id int64, num float64, userId int64, orderId string) (*x_resp.XRespContainer, *x_err.XErr) {
+func AddExchangeRecord(exchange_id int64, num float64, userId int64, orderId string,hlc_price float64) (*x_resp.XRespContainer, *x_err.XErr) {
 	xmysql := mysql.Get()
 
 	if num <= 0 {
@@ -31,7 +31,7 @@ func AddExchangeRecord(exchange_id int64, num float64, userId int64, orderId str
 
 	}
 
-	hlc_price := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)
+	//hlc_price := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)
 
 	pay_price := persistence.GetRealTimePrice(mysql.Get(), exchange.PayCoinId)
 	return_Price := persistence.GetRealTimePrice(mysql.Get(), exchange.ReturnCoinId)

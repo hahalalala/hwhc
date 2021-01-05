@@ -46,7 +46,8 @@ func addExchangeRecord(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	num := req.MustGetFloat64("num")
 	exchange_id := req.MustGetInt64("exchange_id")
 	orderId := req.MustGetString("order_id")
-	return service.AddExchangeRecord(exchange_id, num, userId, orderId)
+	hlcPrice := req.MustGetFloat64("mp_price")
+	return service.AddExchangeRecord(exchange_id, num, userId, orderId,hlcPrice)
 }
 
 func exchangeBuyAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {

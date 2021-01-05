@@ -172,7 +172,7 @@ func AddFrozenToAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	return service.AddFrozenToAmount(userid, amount, orderid, t, coinid, is_shop, hlcPrice)
 }
-
+//1
 func shopTranfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	userid := req.MustGetInt64("user_id")
 	coinid := req.MustGetInt64("coin_id")
