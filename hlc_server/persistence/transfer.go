@@ -67,12 +67,12 @@ func SaveTransfer(mysql *mysql.XMySQL, userId, types int64, coin_id int64, amoun
 
 	result, err := mysql.Exec(sql, userId, amount, types, coin_id, address, data, tx, xtime.TodayDateTimeStr(), fee, memo, status, is_shop, mpPrice)
 	if err != nil {
-		fmt.Print("SaveTransfer insert ", err)
+		log.Error(fmt.Sprintf("SaveTransfer insert err : %v ,userId:%d ,amount:%.8f,tx:%s" ,err,userId,amount,tx))
 		return -3
 	}
 	var id int64
 	if id, err = result.LastInsertId(); err != nil || id <= 0 {
-		fmt.Print("error SaveTransfer , %v, %d", err, id)
+		log.Error(fmt.Sprintf("SaveTransfer insert LastInsertId err : %v ,userId:%d ,amount:%.8f,tx:%s" ,err,userId,amount,tx))
 		return -4
 	}
 	return id
