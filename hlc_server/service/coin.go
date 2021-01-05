@@ -24,7 +24,7 @@ func GetMPIncr(userId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
 	result["todayMPIncr"] = getTodayMPIncr(userId)
 	result["totalMPIncr"] = getTotalMPIncr(userId)
 
-	return x_resp.Success("ok"), nil
+	return x_resp.Success(result), nil
 
 }
 
