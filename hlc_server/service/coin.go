@@ -47,7 +47,7 @@ func getTodayMPIncr(userId int64)  float64 {
 	return r
 }
 
-//目前持有的MP昨日MP增值
+//总增值
 func getTotalMPIncr(userId int64)  float64 {
 
 	//初始

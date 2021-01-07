@@ -11,9 +11,9 @@ import (
 )
 
 //获取总支出
-func GetTotalPay(mysql *mysql.XMySQL, userId, typ int64) float64 {
-	sqlstr := "SELECT SUM(amount) FROM `transactions` WHERE `user_id` = ? AND `type` = ? AND `tx_status` = ? and amount < 0"
-	row := mysql.QueryRow(sqlstr, userId, typ, 1)
+func GetTotalPay(mysql *mysql.XMySQL, userId, coinId int64) float64 {
+	sqlstr := "SELECT SUM(amount) FROM `transactions` WHERE `user_id` = ? AND `coin_id` = ? AND `tx_status` = ? and amount < 0"
+	row := mysql.QueryRow(sqlstr, userId, coinId, 1)
 	total := float64(0)
 	_ = row.Scan(&total)
 	return total
@@ -21,9 +21,9 @@ func GetTotalPay(mysql *mysql.XMySQL, userId, typ int64) float64 {
 
 
 //获取总支出
-func GetTotalPayAfterRate(mysql *mysql.XMySQL, userId, typ int64) float64 {
-	sqlstr := "SELECT SUM(amount * mp_price) FROM `transactions` WHERE `user_id` = ? AND `type` = ? AND `tx_status` = ? and amount < 0"
-	row := mysql.QueryRow(sqlstr, userId, typ, 1)
+func GetTotalPayAfterRate(mysql *mysql.XMySQL, userId, coinId int64) float64 {
+	sqlstr := "SELECT SUM(amount * mp_price) FROM `transactions` WHERE `user_id` = ? AND `coin_id` = ? AND `tx_status` = ? and amount < 0"
+	row := mysql.QueryRow(sqlstr, userId, coinId, 1)
 	total := float64(0)
 	_ = row.Scan(&total)
 	return total
