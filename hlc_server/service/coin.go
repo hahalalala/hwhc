@@ -59,8 +59,13 @@ func getTotalMPIncr(userId int64)  float64 {
 	afterRatetotalPay := persistence.GetTotalPayAfterRate(mysql.Get(),userId,persistence.HLC)
 	afterRatetotalPayDecimal := decimal.NewFromFloat(afterRatetotalPay)
 
-	r ,_ := afterRatetotalPayDecimal.Sub(initRateTotalPayDecimal).Float64()
-	return r
+	//获取结果
+	rDecimal := afterRatetotalPayDecimal.Sub(initRateTotalPayDecimal)
+
+	//结果取反
+	reverseR ,_ :=decimal.NewFromFloat(0.0).Sub(rDecimal).Float64()
+
+	return reverseR
 }
 
 
