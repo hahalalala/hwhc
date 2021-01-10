@@ -140,6 +140,8 @@ func reAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPay := req.MustGetFloat64("mp_price")
 
+	log.Info(fmt.Sprintf("reAmount start userid:%d,coinid:%d,orderid:%s,t:%d,amount:%.8f,is_shop:%d,hlcPrice:%.8f",userid,coinid,orderid,t,amount,is_shop,hlcPay))
+
 	if amount < 0 {
 		log.Info(fmt.Sprintf("资产金额异常 userid: %d ,orderid:%s,amount:%.8f", userid, orderid, amount))
 		return x_resp.Fail(-1017, "资产金额异常", nil), nil
@@ -157,6 +159,9 @@ func add(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	is_shop := req.MustGetInt64("is_shop")
 	hlcPrice := req.MustGetFloat64("mp_price")
+
+
+	log.Info(fmt.Sprintf("toAmount start userid:%d,coinid:%d,orderid:%s,t:%d,amount:%.8f,is_shop:%d,hlcPrice:%.8f",userid,coinid,orderid,t,amount,is_shop,hlcPrice))
 
 	return service.AddAmount(userid, amount, orderid, t, coinid, is_shop, hlcPrice)
 }
