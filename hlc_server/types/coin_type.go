@@ -60,4 +60,5 @@ type UserAmount struct {
 	FrozenAmount float64 `json:"frozen_amount"`
 	TzAmount     float64 `json:"tz_amount"`
 	HzAmount     float64 `json:"hz_amount"`
+	IsShop 		 int64   `json:"is_shop"`
 }

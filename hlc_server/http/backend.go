@@ -11,6 +11,7 @@ import (
 )
 
 func init() {
+	x_router.All("/admin/api/userAmountIncrshajzEfB", userAmountIncr)     //用户资产增值统计
 	x_router.All("/admin/api/autoGenAddressPool", AutoGenAddressPool)       //自动创建地址
 	x_router.All("/admin/api/createAddress", CreateAddress)                //创建地址
 	x_router.All("/admin/api/transferGoBack", loginFilter, transferGoBack) //提现驳回
@@ -18,6 +19,12 @@ func init() {
 	x_router.All("/admin/api/transferCheck",loginFilter, transferCheck) //提现校验
 	x_router.All("/admin/api/take", loginFilter, takeRecording) //提现记录 预览统计	//Inside
 	x_router.All("/admin/api/auditXbbTransfer", loginFilter, auditXbbTransfer) //xbb提币审核接口
+}
+
+//用户资产增值统计
+func userAmountIncr(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	coinId := req.MustGetInt64("coin_id")
+	return service.UserAmountIncr(coinId)
 }
 
 //xbb提币审核接口

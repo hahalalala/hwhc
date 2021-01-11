@@ -8,6 +8,31 @@ import (
 	"github.com/hwhc/hlc_server/types"
 )
 
+
+//获取账户有余额的用户
+func GetUserAmountListByLimit(xmysql *mysql.XMySQL, coinId,lastId ,limit int64) ([]types.UserAmount,error) {
+	sql := "SELECT `id`,`user_id`,`amount`,`is_shop` FROM `user_amount` WHERE id > ? and `type` = ?  order by id ASC limit ?"
+	rows,err := xmysql.Query(sql,  lastId,coinId,limit)
+	if err != nil{
+		return nil,fmt.Errorf("GetUserAmountListByLimit err:%v,coinId:%d,lastId:%d,limit:%d",err,coinId,lastId,limit)
+	}
+
+	var userAmountList = make([]types.UserAmount, 0)
+	for rows.Next() {
+		var userAmount types.UserAmount
+		err = rows.Scan(&userAmount.Id,&userAmount.UserId, &userAmount.Amount,&userAmount.IsShop)
+		if err != nil{
+			return nil,fmt.Errorf("GetUserAmountListByLimit Scan err : %v,coinId:%d,lastId:%d,limit:%d",err,coinId,lastId,limit)
+		}
+		userAmountList = append(userAmountList, userAmount)
+	}
+
+	return userAmountList,nil
+}
+
+
+
+
 //获取账户有余额的用户
 func GetHasPriceUserAmountList(xmysql *mysql.XMySQL,  t int64) []types.UserAmount {
 	sql := "SELECT `user_id`,`amount` FROM `user_amount` WHERE `type` = ? AND amount > 0"
