@@ -18,6 +18,7 @@ func init() {
 	x_router.Get("/user/api/transfer", loginFilter, transfer)                      //提现 内部转账
 	x_router.Get("/user/api/transfer/list", loginFilter, transferList)             //提现/转账记录
 	x_router.Get("/user/api/coins/coinList", loginFilter, coinList)                //获取用户币种余额
+	x_router.Get("/user/api/coins/userCoinAmount", loginFilter, userCoinAmount)    //获取用户某个币种余额
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.All("/user/api/transfer_out", loginFilter, transfer_wchat)            //提现
 	x_router.All("/user/api/transfer_otc", loginFilter, transfer_otc)              //otc提现
@@ -32,6 +33,20 @@ func init() {
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.Get("/user/api/coins/getMPIncr",loginFilter,getMPIncr)                           //获取增值
 
+
+}
+
+
+
+
+//获取用户某个币种余额
+func userCoinAmount(req *x_req.XReq)(*x_resp.XRespContainer, *x_err.XErr)  {
+
+	userId := req.MustGetInt64("user_id")
+	coinId := req.MustGetInt64("coin_id")
+	amount := service.GetUserAmount(userId,coinId)
+
+	return x_resp.Success(amount),nil
 }
 
 //获取增值
