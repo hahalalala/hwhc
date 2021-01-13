@@ -18,56 +18,34 @@ import (
 )
 
 //获取mp增值
-func GetMPIncr(userId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
+func GetIncrData(userId ,coinId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
 
 	result := make(map[string]float64,0)
-	result["todayMPIncr"] = getTodayMPIncr(userId)
-	result["totalMPIncr"] = getTotalMPIncr(userId)
+	result["amountTotal"] = persistence.GetUserAmount(mysql.Get(), userId, coinId)
+	result["yesterdayIncrValue"] = persistence.GetAmountIncrByDate(mysql.Get(),userId,coinId,util.GetYestdayDateStr())
+	result["totalIncrValue"] = persistence.GetAmountIncrTotal(mysql.Get(),userId,coinId)
 
 	return x_resp.Success(result), nil
-
 }
 
-//目前持有的MP昨日MP增值
-func getTodayMPIncr(userId int64)  float64 {
-	total := persistence.GetUserAmount(mysql.Get(),userId,persistence.HLC)
-	totalDecimal := decimal.NewFromFloat(total)
-	if totalDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)){
-		return 0
+//获取增值记录
+func GetIncrRecord(userId ,coinId int64,startDate , endDate string,lastId,limit int64)  (*x_resp.XRespContainer, *x_err.XErr) {
+
+	count,err:= persistence.GetAmountIncrRecordCount(mysql.Get(),userId,coinId,startDate,endDate)
+	if err != nil{
+		log.Error("GetIncrRecord GetAmountIncrRecordCount ERROR : %v",err)
+	}
+	list,err:= persistence.GetAmountIncrRecordList(mysql.Get(),userId,coinId,startDate,endDate,lastId,limit)
+	if err != nil{
+		log.Error("GetIncrRecord GetAmountIncrRecordList ERROR : %v",err)
 	}
 
-	todayPrice := persistence.GetPriceByDate(mysql.Get(),persistence.HLC,util.Datestr())
-	yestdayPrice := persistence.GetPriceByDate(mysql.Get(),persistence.HLC,util.GetYestdayDateStr())
+	result := make(map[string]interface{},0)
+	result["count"] = count
+	result["list"] = list
 
-	todayTotalDecimal := totalDecimal.Mul(decimal.NewFromFloat(todayPrice))
-	yestdayTotalDecimal := totalDecimal.Mul(decimal.NewFromFloat(yestdayPrice))
-
-	r,_ := todayTotalDecimal.Sub(yestdayTotalDecimal).Float64()
-
-	return r
+	return x_resp.Success(result), nil
 }
-
-//总增值
-func getTotalMPIncr(userId int64)  float64 {
-
-	//初始
-	initMPRate := 0.1
-	totalPay := persistence.GetTotalPay(mysql.Get(),userId,persistence.HLC) //获取总支出
-	initRateTotalPayDecimal := decimal.NewFromFloat(initMPRate).Mul(decimal.NewFromFloat(totalPay))
-
-	//获取乘以汇率后总支出
-	afterRatetotalPay := persistence.GetTotalPayAfterRate(mysql.Get(),userId,persistence.HLC)
-	afterRatetotalPayDecimal := decimal.NewFromFloat(afterRatetotalPay)
-
-	//获取结果
-	rDecimal := afterRatetotalPayDecimal.Sub(initRateTotalPayDecimal)
-
-	//结果取反
-	reverseR ,_ :=decimal.NewFromFloat(0.0).Sub(rDecimal).Float64()
-
-	return reverseR
-}
-
 
 
 func ValidAddress() (*x_resp.XRespContainer, *x_err.XErr)  {

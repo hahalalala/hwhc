@@ -124,7 +124,7 @@ func multiBatchExecStart(userAmounts []types.UserAmount)  {
 func execStart(userAmount types.UserAmount)  {
 
 	//判断今天是否执行过
-	recordId := persistence.GetAmountIncrRecordId(mysql.Get(),userAmount.UserId,util.Datestr())
+	recordId := persistence.GetAmountIncrRecordId(mysql.Get(),userAmount.UserId,globalCoinId,util.Datestr())
 	if recordId > 0 {
 		return
 	}

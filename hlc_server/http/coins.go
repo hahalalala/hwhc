@@ -31,8 +31,8 @@ func init() {
 	x_router.Get("/user/api/coins/shopTranfer", loginFilter, shopTranfer)          //商家转账接口
 	x_router.Get("/user/api/coins/amountToFrozen", loginFilter, AddFrozenToAmount) //加冻结减可用
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
-	x_router.Get("/user/api/coins/getMPIncr",loginFilter,getMPIncr)                           //获取增值
-
+	x_router.Get("/user/api/coins/incrData",getIncrData)               //获取增值数据
+	x_router.Get("/user/api/coins/incrRecord",getIncrRecord)           //获取增值记录
 
 }
 
@@ -50,9 +50,21 @@ func userCoinAmount(req *x_req.XReq)(*x_resp.XRespContainer, *x_err.XErr)  {
 }
 
 //获取增值
-func getMPIncr(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+func getIncrData(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	userId := req.MustGetInt64("user_id")
-	return service.GetMPIncr(userId)
+	coinId := req.MustGetInt64("coin_id")
+	return service.GetIncrData(userId,coinId)
+}
+
+//获取增值记录
+func getIncrRecord(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	userId := req.MustGetInt64("user_id")
+	coinId := req.MustGetInt64("coin_id")
+	startDate := req.MustGetString("startDate")
+	endDate := req.MustGetString("endDate")
+	lastId := req.MustGetInt64("last_id")
+	limit := req.MustGetInt64("limit")
+	return service.GetIncrRecord(userId,coinId,startDate,endDate,lastId,limit)
 }
 
 //获取单笔交易信息
