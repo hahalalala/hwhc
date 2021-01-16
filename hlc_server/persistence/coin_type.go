@@ -188,12 +188,44 @@ func GetHLCPrice() (hlcPrice ,idrPrice ,vndPrice float64) {
 
 //@todo确认新加币种是否返回参与计算
 func GetCoins(xmysql *mysql.XMySQL, useId int64) []types.CoinTypeReturn {
-	coinsql := "select c.id id , url , coinname,sortname,tokenname,app_recharge,app_withdrawal,in_withdrawal,user_id,IFNULL(amount,0),IFNULL(frozen_amount,0),IFNULL(transfer_small_num,0),IFNULL(transfer_fee,0),transfer_big_num from coin c  left JOIN (select * from user_amount where user_id = ?) ua on c.id = ua.type where c.status <> 0 ORDER BY chain_num asc"
-	rows, err := xmysql.Query(coinsql, useId)
+
+	//coinsql := "select c.id id , url , coinname,sortname,tokenname,app_recharge,app_withdrawal,in_withdrawal,user_id,IFNULL(amount,0),IFNULL(frozen_amount,0),IFNULL(transfer_small_num,0),IFNULL(transfer_fee,0),transfer_big_num from coin c  left JOIN (select * from user_amount where user_id = ?) ua on c.id = ua.type where c.status <> 0 ORDER BY chain_num asc"
+	//rows, err := xmysql.Query(coinsql, useId)
+	//if err != nil {
+	//	fmt.Println("GetCoins", err)
+	//	return nil
+	//}
+
+	coinsql:=`
+	SELECT
+		c.id,
+		url,
+		coinname,
+		sortname,
+		tokenname,
+		app_recharge,
+		app_withdrawal,
+		in_withdrawal,
+		IFNULL(user_id,?),
+		IFNULL( amount, 0 ),
+		IFNULL( frozen_amount, 0 ),
+		IFNULL( transfer_small_num, 0 ),
+		IFNULL( transfer_fee, 0 ),
+		transfer_big_num
+	FROM
+		coin c
+		LEFT JOIN user_amount ua ON c.id = ua.type  and ua.user_id = ?
+	WHERE
+		c.STATUS <> 0
+	ORDER BY
+		chain_num ASC`
+
+	rows, err := xmysql.Query(coinsql, useId,useId)
 	if err != nil {
 		fmt.Println("GetCoins", err)
 		return nil
 	}
+
 	list := make([]types.CoinTypeReturn, 0)
 	hlcPrice,_,_:= GetHLCPrice()
 	for rows.Next() {
