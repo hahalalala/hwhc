@@ -8,6 +8,7 @@ import (
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
+	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"sync"
 )
@@ -69,8 +70,8 @@ func UserAmountIncr(coinId int64) (*x_resp.XRespContainer, *x_err.XErr) {
 //初始化全局参数
 func initUserAmountIncrGlobalVars(coinId int64) error {
 
-	globalNowDate = "2021-01-17"//util.GetYestdayDateStr() //前一天时间
-	globalBeforeDate = "2021-01-16"//util.Get2dayBefore()  //后一天时间
+	globalNowDate = util.GetYestdayDateStr() //前一天时间
+	globalBeforeDate = util.Get2dayBefore()  //后一天时间
 
 	globalCoinId = coinId
 
