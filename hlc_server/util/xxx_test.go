@@ -1,9 +1,7 @@
 package util
 
 import (
-	"encoding/hex"
-	"fmt"
-	"github.com/EducationEKT/EKT/crypto"
+	"github.com/hc/hlc_server/util"
 	"testing"
 )
 
@@ -14,5 +12,5 @@ func TestPrice(t *testing.T) {
 	//	fmt.Println(err, success)
 	//}
 
-	fmt.Println(hex.EncodeToString(crypto.Sha3_256([]byte("9984754" + salt_code))))
+	t.Log(util.Get2dayBefore())
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
-	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"sync"
 )
@@ -20,39 +19,40 @@ import (
 * @Version 1.0
 **/
 var globalCoinId int64
-var globalNowAmountPrice float64
+var globalNowAmountPrice float64 //前一天价格
 var globalNowAmountPriceDecimal decimal.Decimal
-var globalBeforeAmountPrice float64
+var globalBeforeAmountPrice float64 //后一天价格
 var globalBeforeAmountPriceDecimal decimal.Decimal
+var globalNowDate string    //前一天时间
+var globalBeforeDate string //后一天时间
 
 //用户资产增值
-func UserAmountIncr(coinId int64)  (*x_resp.XRespContainer, *x_err.XErr)  {
+func UserAmountIncr(coinId int64) (*x_resp.XRespContainer, *x_err.XErr) {
 
 	//初始化参数
 	err := initUserAmountIncrGlobalVars(coinId)
-	if err != nil{
-		log.Error(fmt.Sprintf("UserAmountIncr initUserAmountIncrGlobalVars err : %v ",err))
-		return x_resp.Fail(-301,"UserAmountIncr err " ,nil), nil
+	if err != nil {
+		log.Error(fmt.Sprintf("UserAmountIncr initUserAmountIncrGlobalVars err : %v ", err))
+		return x_resp.Fail(-301, "UserAmountIncr err ", nil), nil
 	}
-
 
 	var limit int64 = 5000
 	var lastId int64
 	var loop int64
 
-	for{
-		list,err := persistence.GetUserAmountListByLimit(mysql.Get(),coinId,lastId,limit)
-		if err != nil{
-			log.Error("UserAmountIncr GetUserAmountListByLimit err : %v ",err)
-			return x_resp.Fail(-303,"UserAmountIncr GetUserAmountListByLimit err",nil), nil
+	for {
+		list, err := persistence.GetUserAmountListByLimit(mysql.Get(), coinId, lastId, limit)
+		if err != nil {
+			log.Error("UserAmountIncr GetUserAmountListByLimit err : %v ", err)
+			return x_resp.Fail(-303, "UserAmountIncr GetUserAmountListByLimit err", nil), nil
 		}
-		size:= len(list)
-		if size == 0{
+		size := len(list)
+		if size == 0 {
 			break
 		}
 		loop++
 		lastId = list[size-1].Id //当前轮最后一个id
-		log.Info(fmt.Sprintf("UserAmountIncr loop:%d ,lastId :%d",loop,lastId))
+		log.Info(fmt.Sprintf("UserAmountIncr loop:%d ,lastId :%d", loop, lastId))
 
 		//多线程处理
 		multiBatchExecStart(list)
@@ -67,29 +67,32 @@ func UserAmountIncr(coinId int64)  (*x_resp.XRespContainer, *x_err.XErr)  {
 }
 
 //初始化全局参数
-func initUserAmountIncrGlobalVars(coinId int64) error  {
+func initUserAmountIncrGlobalVars(coinId int64) error {
+
+	globalNowDate = "2021-01-15"//util.GetYestdayDateStr() //前一天时间
+	globalBeforeDate = "2021-01-14"//util.Get2dayBefore()  //后一天时间
 
 	globalCoinId = coinId
 
-	//今日价格
-	globalNowAmountPrice = persistence.GetPriceByDate(mysql.Get(),coinId,util.Datestr())
-	globalNowAmountPriceDecimal= decimal.NewFromFloat(globalNowAmountPrice)
-	if globalNowAmountPriceDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)){
-		return fmt.Errorf("initUserAmountIncrGlobalVars globalNowAmountPriceDecimal 异常  globalNowAmountPrice : %.8f ",globalNowAmountPrice)
+	//昨日价格
+	globalNowAmountPrice = persistence.GetPriceByDate(mysql.Get(), coinId, globalNowDate)
+	globalNowAmountPriceDecimal = decimal.NewFromFloat(globalNowAmountPrice)
+	if globalNowAmountPriceDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)) {
+		return fmt.Errorf("initUserAmountIncrGlobalVars globalNowAmountPriceDecimal 异常  globalNowAmountPrice : %.8f ", globalNowAmountPrice)
 	}
 
-	//昨日价格
-	globalBeforeAmountPrice = persistence.GetPriceByDate(mysql.Get(),coinId,util.GetYestdayDateStr())
+	//前日价格
+	globalBeforeAmountPrice = persistence.GetPriceByDate(mysql.Get(), coinId, globalBeforeDate)
 	globalBeforeAmountPriceDecimal = decimal.NewFromFloat(globalBeforeAmountPrice)
-	if globalBeforeAmountPriceDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)){
-		return fmt.Errorf("initUserAmountIncrGlobalVars globalBeforeAmountPriceDecimal 异常  globalBeforeAmountPrice : %.8f ",globalBeforeAmountPrice)
+	if globalBeforeAmountPriceDecimal.LessThanOrEqual(decimal.NewFromFloat(0.0)) {
+		return fmt.Errorf("initUserAmountIncrGlobalVars globalBeforeAmountPriceDecimal 异常  globalBeforeAmountPrice : %.8f ", globalBeforeAmountPrice)
 	}
 
 	return nil
 }
 
 //多线程处理
-func multiBatchExecStart(userAmounts []types.UserAmount)  {
+func multiBatchExecStart(userAmounts []types.UserAmount) {
 
 	TCount := 20 //线程数量
 	taskChan := make(chan types.UserAmount)
@@ -97,7 +100,7 @@ func multiBatchExecStart(userAmounts []types.UserAmount)  {
 
 	//1)生产任务
 	go func() {
-		for _,task := range userAmounts{
+		for _, task := range userAmounts {
 			taskChan <- task
 		}
 		close(taskChan)
@@ -112,7 +115,7 @@ func multiBatchExecStart(userAmounts []types.UserAmount)  {
 				wg.Done()
 			}()
 			for task := range taskChan {
-				autoStatus:= task
+				autoStatus := task
 				execStart(autoStatus)
 			}
 		}()
@@ -121,27 +124,22 @@ func multiBatchExecStart(userAmounts []types.UserAmount)  {
 	wg.Wait()
 }
 
-func execStart(userAmount types.UserAmount)  {
+func execStart(userAmount types.UserAmount) {
 
 	//判断今天是否执行过
-	recordId := persistence.GetAmountIncrRecordId(mysql.Get(),userAmount.UserId,globalCoinId,util.Datestr())
+	recordId := persistence.GetAmountIncrRecordId(mysql.Get(), userAmount.UserId, globalCoinId, globalNowDate)
 	if recordId > 0 {
 		return
 	}
 
-	//执行
-	amountTotalDecimal := decimal.NewFromFloat(userAmount.Amount) //当前资产
-	nowComputePrice:= amountTotalDecimal.Mul(globalNowAmountPriceDecimal) //今天计算后的
-	f1,_ := nowComputePrice.Float64()
-	fmt.Println(f1)
-	beforeComputePrice:= amountTotalDecimal.Mul(globalBeforeAmountPriceDecimal) //昨天计算后的
-	f2,_ := beforeComputePrice.Float64()
-	fmt.Println(f2)
+	//执行1968050.595
+	amountTotalDecimal := decimal.NewFromFloat(userAmount.Amount)                       //当前资产
+	yesterdayComputePrice := amountTotalDecimal.Mul(globalNowAmountPriceDecimal)        //昨天计算后的
+	beforeComputePrice := amountTotalDecimal.Mul(globalBeforeAmountPriceDecimal)        //前天计算后的
+	incrValue, _ := yesterdayComputePrice.Sub(beforeComputePrice).Truncate(5).Float64() //增值计算
 
-	incrValue,_:= nowComputePrice.Sub(beforeComputePrice).Truncate(5).Float64() //增值计算
-
-	err  := persistence.AddAmountIncrRecord(mysql.Get(),userAmount.UserId,globalCoinId,userAmount.IsShop,userAmount.Amount,incrValue,globalNowAmountPrice,globalBeforeAmountPrice)
-	if err != nil{
-		log.Error("UserAmountIncr AddAmountIncrRecord err : %v ",err)
+	err := persistence.AddAmountIncrRecord(mysql.Get(), userAmount.UserId, globalCoinId, userAmount.IsShop, userAmount.Amount, incrValue, globalNowAmountPrice, globalBeforeAmountPrice, globalNowDate, globalBeforeDate)
+	if err != nil {
+		log.Error("UserAmountIncr AddAmountIncrRecord err : %v ", err)
 	}
 }

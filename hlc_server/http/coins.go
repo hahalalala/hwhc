@@ -31,8 +31,8 @@ func init() {
 	x_router.Get("/user/api/coins/shopTranfer", loginFilter, shopTranfer)          //商家转账接口
 	x_router.Get("/user/api/coins/amountToFrozen", loginFilter, AddFrozenToAmount) //加冻结减可用
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
-	x_router.Get("/user/api/coins/incrData",getIncrData)               //获取增值数据
-	x_router.Get("/user/api/coins/incrRecord",getIncrRecord)           //获取增值记录
+	x_router.Get("/user/api/coins/incrData",loginFilter,getIncrData)               //获取增值数据
+	x_router.Get("/user/api/coins/incrRecord",loginFilter,getIncrRecord)           //获取增值记录
 
 }
 

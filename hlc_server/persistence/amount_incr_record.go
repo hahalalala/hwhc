@@ -8,17 +8,17 @@ import (
 )
 
 //添加增值记录
-func AddAmountIncrRecord(xmysql  *mysql.XMySQL,userId,coinId,isShop int64,amount,incrValue,nowAmountPrice,beforeAmountPrice float64) error {
+func AddAmountIncrRecord(xmysql  *mysql.XMySQL,userId,coinId,isShop int64,amount,incrValue,nowAmountPrice,beforeAmountPrice float64,incrNowDate ,incrBeforeDate string) error {
 
-	sqlstr := "INSERT INTO amount_incr_record (user_id,coin_id,amount,incr_value,now_amount_price,before_amount_price,is_shop,create_date) VALUES (?,?,?,?,?,?,?,?)"
-	result,err := xmysql.Exec(sqlstr,userId,coinId,amount,incrValue,nowAmountPrice,beforeAmountPrice,isShop,util.Datestr())
+	sqlstr := "INSERT INTO amount_incr_record (user_id,coin_id,amount,incr_value,now_amount_price,before_amount_price,is_shop,create_date,incr_now_date,incr_before_date) VALUES (?,?,?,?,?,?,?,?,?,?)"
+	result,err := xmysql.Exec(sqlstr,userId,coinId,amount,incrValue,nowAmountPrice,beforeAmountPrice,isShop,util.Datestr(),incrNowDate,incrBeforeDate)
 	if err != nil{
 		return fmt.Errorf("AddAmountIncrRecord Exec sql err:%v , userId:%d ,coinId:%d ,amount:%.8f,incrValue:%.8f,nowAmountPrice:%.8f,beforeAmountPrice:%.8f",
 			err,userId,coinId,amount,incrValue,nowAmountPrice,beforeAmountPrice)
 	}
 	if id, err := result.LastInsertId(); err != nil || id <= 0 {
-		return fmt.Errorf("AddAmountIncrRecord LastInsertId  err:%v , userId:%d ,coinId:%d ,amount:%.8f,incrValue:%.8f,nowAmountPrice:%.8f,beforeAmountPrice:%.8f",
-			err,userId,coinId,amount,incrValue,nowAmountPrice,beforeAmountPrice)
+		return fmt.Errorf("AddAmountIncrRecord LastInsertId  err:%v , userId:%d ,coinId:%d ,amount:%.8f,incrValue:%.8f,nowAmountPrice:%.8f,beforeAmountPrice:%.8f,incr_now_date:%s,incr_before_date:%s,",
+			err,userId,coinId,amount,incrValue,nowAmountPrice,beforeAmountPrice,incrNowDate,incrBeforeDate)
 	}
 
 	return nil
@@ -26,7 +26,7 @@ func AddAmountIncrRecord(xmysql  *mysql.XMySQL,userId,coinId,isShop int64,amount
 
 
 func GetAmountIncrRecordId(xmysql  *mysql.XMySQL,userId,coinId int64,dateStr string)int64 {
-	sqlstr := "SELECT id FROM amount_incr_record WHERE user_id = ? AND coin_id = ? AND create_date = ?"
+	sqlstr := "SELECT id FROM amount_incr_record WHERE user_id = ? AND coin_id = ? AND incr_now_date = ?"
 	row :=xmysql.QueryRow(sqlstr,userId,coinId,dateStr)
 	var id int64
 	_ = row.Scan(&id)
@@ -50,6 +50,17 @@ func GetAmountIncrByDate(xmysql  *mysql.XMySQL,userId ,coinId int64,dateStr stri
 	_ = row.Scan(&incrValue)
 	return incrValue
 }
+
+
+//根据时间获取增值
+func GetLastAmountIncr(xmysql  *mysql.XMySQL,userId ,coinId int64) float64 {
+	sqlstr := "SELECT incr_value FROM amount_incr_record WHERE user_id = ? AND coin_id = ? ORDER BY id DESC LIMIT 1 "
+	row :=xmysql.QueryRow(sqlstr,userId,coinId)
+	var incrValue float64
+	_ = row.Scan(&incrValue)
+	return incrValue
+}
+
 
 //获取记录数量
 func GetAmountIncrRecordCount(xmysql  *mysql.XMySQL,userId ,coinId int64,startDateStr,endDateStr string)(total int64,err error)  {

@@ -10,7 +10,6 @@ import (
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
-	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"math"
 	"strconv"
@@ -22,7 +21,7 @@ func GetIncrData(userId ,coinId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
 
 	result := make(map[string]float64,0)
 	result["amountTotal"] = persistence.GetUserAmount(mysql.Get(), userId, coinId)
-	result["yesterdayIncrValue"] = persistence.GetAmountIncrByDate(mysql.Get(),userId,coinId,util.GetYestdayDateStr())
+	result["yesterdayIncrValue"] = persistence.GetLastAmountIncr(mysql.Get(),userId,coinId)
 	result["totalIncrValue"] = persistence.GetAmountIncrTotal(mysql.Get(),userId,coinId)
 
 	return x_resp.Success(result), nil
