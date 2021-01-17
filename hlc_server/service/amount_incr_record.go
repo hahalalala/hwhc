@@ -69,8 +69,8 @@ func UserAmountIncr(coinId int64) (*x_resp.XRespContainer, *x_err.XErr) {
 //初始化全局参数
 func initUserAmountIncrGlobalVars(coinId int64) error {
 
-	globalNowDate = "2021-01-16"//util.GetYestdayDateStr() //前一天时间
-	globalBeforeDate = "2021-01-15"//util.Get2dayBefore()  //后一天时间
+	globalNowDate = "2021-01-15"//util.GetYestdayDateStr() //前一天时间
+	globalBeforeDate = "2021-01-16"//util.Get2dayBefore()  //后一天时间
 
 	globalCoinId = coinId
 
