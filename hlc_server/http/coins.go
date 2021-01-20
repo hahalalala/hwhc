@@ -273,6 +273,8 @@ func transfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	t := req.MustGetInt64("coin_id")
 	re_user_id := req.MustGetInt64("re_user_id") //转账ID
 	amount := req.MustGetFloat64("amount")
+	isShop := req.MustGetInt64("is_shop") //转账方是否是商家
+	reShop := req.MustGetInt64("re_shop") //接收方是否是商家
 
 	if re_user_id == userId {
 		return x_resp.Fail(-1021, "用户不能给自己转账", nil), nil
@@ -287,7 +289,7 @@ func transfer(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 		return x_resp.Fail(-10, "暂不支持此提币", nil), nil
 	}
 
-	return service.Transfer(userId, t, amount, re_user_id, coinType.Sortname)
+	return service.Transfer(userId, t, amount, re_user_id, isShop,reShop)
 }
 
 func transferList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
