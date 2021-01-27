@@ -21,7 +21,7 @@ func init() {
 	x_router.Get("/user/api/coins/userCoinAmount", loginFilter, userCoinAmount)    //获取用户某个币种余额
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.All("/user/api/transfer_out", loginFilter, transfer_wchat)            //提现
-	x_router.Get("/user/api/transfer_out_fee",transferWchatFee)         //提现手续费
+	x_router.Get("/user/api/transfer_out_fee",loginFilter,transferWchatFee)        //提现手续费
 	x_router.All("/user/api/transfer_otc", loginFilter, transfer_otc)              //otc提现
 	x_router.Get("/user/api/coin/cal", loginFilter, cal)                           //获取地址
 	x_router.Get("/user/api/coins/toAmount", loginFilterToBouns, add)              //添加可用资产
