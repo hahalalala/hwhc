@@ -208,19 +208,24 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 
 
 	fee_coin := persistence.HLC
-	if is_shop > 0 {
-		//wtFee = amount * 0.01 * coinPrice / usdtPrice
-		shopRate := decimal.NewFromFloat(0.01).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(usdtPrice)).Truncate(8)
-		wtFee ,_ = decimal.NewFromFloat(amount).Mul(shopRate).Float64()
-		userwtamount = persistence.GetUserAmount(mysql.Get(), userId, persistence.USDT)
-		fee_coin = persistence.USDT
-	} else {
-		if wtFee < 100 {
-			wtFee = 100
-		}
-	}
 
-	wtFee,_ = decimal.NewFromFloat(wtFee).Truncate(5).Float64() //保留5位
+	//注释掉 ，之前是动态，现在改为写死 10usdt手续费
+	//if is_shop > 0 {
+	//	//wtFee = amount * 0.01 * coinPrice / usdtPrice
+	//	shopRate := decimal.NewFromFloat(0.01).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(usdtPrice)).Truncate(8)
+	//	wtFee ,_ = decimal.NewFromFloat(amount).Mul(shopRate).Float64()
+	//	userwtamount = persistence.GetUserAmount(mysql.Get(), userId, persistence.USDT)
+	//	fee_coin = persistence.USDT
+	//} else {
+	//	if wtFee < 100 {
+	//		wtFee = 100
+	//	}
+	//}
+	//wtFee,_ = decimal.NewFromFloat(wtFee).Truncate(5).Float64() //保留5位
+
+	feeUsdtNum := 10.0
+	feeUsdtTotalDecimal:=decimal.NewFromFloat(feeUsdtNum).Mul(decimal.NewFromFloat(usdtPrice))
+	wtFee,_ = feeUsdtTotalDecimal.Div(decimal.NewFromFloat(hlcPrice)).Truncate(5).Float64()
 
 	if decimal.NewFromFloat(userwtamount).LessThan(decimal.NewFromFloat(wtFee)) { //userwtamount < wtFee
 		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
