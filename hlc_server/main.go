@@ -51,6 +51,7 @@ func main() {
 func getConfigFilePath() string {
 	args := os.Args
 	confPath := "conf.json"
+	confPath = "/Users/seven/Developer/goenv/src/github.com/hwhc/hlc_server/conf.json"
 
 	if len(args) > 1 {
 		confPath = args[1]

@@ -212,7 +212,7 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)   //0.3
 
 	//手续费
-	wtFee,fee_coin := TransferWchatFee(amount)
+	wtFee,fee_coin := TransferWchatFee(amount,cid_int)
 
 	if decimal.NewFromFloat(userwtamount).LessThan(decimal.NewFromFloat(wtFee)) { //userwtamount < wtFee
 		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
@@ -260,13 +260,22 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 }
 
 //体现手续费
-func TransferWchatFee(amount float64) (float64,int64) {
+func TransferWchatFee(total float64,coinId int64) (float64,int64) {
 
 	var feeCoinId int64 = persistence.HLC //扣除手续费币种
 
 	transferFee:= Fee(feeCoinId)
-	fee,_:= decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(transferFee)).Truncate(5).Float64()
-	return fee,feeCoinId
+	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), feeCoinId)
+	coinPrice := persistence.GetRealTimePrice(mysql.Get(), coinId)
+
+	totalCoinFee := decimal.NewFromFloat(total).Mul(decimal.NewFromFloat(coinPrice)).Mul(decimal.NewFromFloat(transferFee))
+	if decimal.NewFromFloat(hlcPrice).GreaterThan(decimal.NewFromFloat(0)) {
+		totalHlcFee,_:= totalCoinFee.Div(decimal.NewFromFloat(hlcPrice)).Truncate(5).Float64()
+		return totalHlcFee,feeCoinId
+	}else{
+		return 0,feeCoinId
+	}
+
 }
 
 
