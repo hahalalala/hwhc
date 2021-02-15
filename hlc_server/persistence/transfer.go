@@ -289,3 +289,15 @@ func GetReceiveTotal(mysql *mysql.XMySQL, userId int64, startTime, endTime strin
 	_ = row.Scan(&nonce)
 	return nonce
 }
+
+//是否入金
+func IsInCoin(mysql *mysql.XMySQL, userId int64, startTime string) bool {
+	sqlstr := "SELECT count(1) FROM `transactions` WHERE `user_id` = ? AND `type` in(1,3)  and amount > 0 and coin_id in(2,3,4) and  create_time >= ?"
+	row := mysql.QueryRow(sqlstr, userId,startTime)
+	var count int64
+	_ = row.Scan(&count)
+	if count > 0 {
+		return true
+	}
+	return false
+}

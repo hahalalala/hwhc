@@ -5,6 +5,7 @@ import (
 	"github.com/EducationEKT/xserver/x_err"
 	"github.com/EducationEKT/xserver/x_http/x_resp"
 	"github.com/EducationEKT/xserver/x_utils/x_random"
+	"github.com/hc/hlc_server/util"
 	"github.com/hwhc/hlc_server/hoo"
 	"github.com/hwhc/hlc_server/log"
 	"github.com/hwhc/hlc_server/mysql"
@@ -15,6 +16,17 @@ import (
 	"strconv"
 	"time"
 )
+
+
+//是否入金
+func IsInCoin(userId int64,startTime string)  (*x_resp.XRespContainer, *x_err.XErr) {
+	result := make(map[string]bool,0)
+
+	startTime = util.HttpDatetimeStrFormat(startTime)
+
+	result["isIn"] = persistence.IsInCoin(mysql.Get(),userId,startTime)
+	return x_resp.Success(result), nil
+}
 
 //获取mp增值
 func GetIncrData(userId ,coinId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
@@ -200,7 +212,7 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)   //0.3
 
 	//手续费
-	wtFee,fee_coin := TransferWchatFee()
+	wtFee,fee_coin := TransferWchatFee(amount)
 
 	if decimal.NewFromFloat(userwtamount).LessThan(decimal.NewFromFloat(wtFee)) { //userwtamount < wtFee
 		log.Error("Transfer Transfer_wchat 扣取余额失败 用户手续费余额不足 用户id：%s,币种类型 %s,扣取数量 %s", userId, cid_int, amount)
@@ -248,39 +260,13 @@ func Transfer_wchat(orderId string, cid_int int64, address string, amount float6
 }
 
 //体现手续费
-func TransferWchatFee() (float64,int64) {
+func TransferWchatFee(amount float64) (float64,int64) {
 
 	var feeCoinId int64 = persistence.HLC //扣除手续费币种
 
-	//transferFee:= Fee(feeCoinId)
-
-	hlcPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.HLC)
-	usdtPrice := persistence.GetRealTimePrice(mysql.Get(), persistence.USDT)
-	//coinPrice := persistence.GetRealTimePrice(mysql.Get(), feeCoinId)
-
-	//注释掉 ，之前是动态，现在改为写死 10usdt手续费
-	//wtFee := amount * transferFee * coinPrice / hlcPrice
-	//rate:= decimal.NewFromFloat(transferFee).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(hlcPrice)).Truncate(8)
-	//wtFee,_ :=rate.Mul(decimal.NewFromFloat(amount)).Float64()
-
-	//if is_shop > 0 {
-	//	//wtFee = amount * 0.01 * coinPrice / usdtPrice
-	//	shopRate := decimal.NewFromFloat(0.01).Mul(decimal.NewFromFloat(coinPrice)).Div(decimal.NewFromFloat(usdtPrice)).Truncate(8)
-	//	wtFee ,_ = decimal.NewFromFloat(amount).Mul(shopRate).Float64()
-	//	userwtamount = persistence.GetUserAmount(mysql.Get(), userId, persistence.USDT)
-	//	fee_coin = persistence.USDT
-	//} else {
-	//	if wtFee < 100 {
-	//		wtFee = 100
-	//	}
-	//}
-	//wtFee,_ = decimal.NewFromFloat(wtFee).Truncate(5).Float64() //保留5位
-
-	feeUsdtNum := 10.0
-	feeUsdtTotalDecimal:=decimal.NewFromFloat(feeUsdtNum).Mul(decimal.NewFromFloat(usdtPrice))
-	wtFee,_ := feeUsdtTotalDecimal.Div(decimal.NewFromFloat(hlcPrice)).Truncate(5).Float64()
-
-	return wtFee,feeCoinId
+	transferFee:= Fee(feeCoinId)
+	fee,_:= decimal.NewFromFloat(amount).Mul(decimal.NewFromFloat(transferFee)).Truncate(5).Float64()
+	return fee,feeCoinId
 }
 
 

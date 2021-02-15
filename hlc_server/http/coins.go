@@ -34,7 +34,7 @@ func init() {
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.Get("/user/api/coins/incrData",loginFilter,getIncrData)               //获取增值数据
 	x_router.Get("/user/api/coins/incrRecord",loginFilter,getIncrRecord)           //获取增值记录
-
+	x_router.Get("/user/api/coins/isInCoin",loginFilter,isInCoin)                  //指定时间是否入金
 }
 
 
@@ -42,7 +42,9 @@ func init() {
 //获取用户提现手续费
 func transferWchatFee(req *x_req.XReq)(*x_resp.XRespContainer, *x_err.XErr)  {
 
-	amount,coinId := service.TransferWchatFee()
+	total:=req.MustGetFloat64("total")
+
+	amount,coinId := service.TransferWchatFee(total)
 
 	res:= make(map[string]interface{})
 	res["amount"] = amount
@@ -321,4 +323,11 @@ func transferList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 		"data":  data,
 		"count": count,
 	}), nil
+}
+
+func isInCoin(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	userId := req.MustGetInt64("user_id")
+	startTime := req.MustGetString("start_time")
+
+	return service.IsInCoin(userId, startTime)
 }
