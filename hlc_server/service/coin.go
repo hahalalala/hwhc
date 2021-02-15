@@ -5,7 +5,7 @@ import (
 	"github.com/EducationEKT/xserver/x_err"
 	"github.com/EducationEKT/xserver/x_http/x_resp"
 	"github.com/EducationEKT/xserver/x_utils/x_random"
-	"github.com/hc/hlc_server/util"
+	"github.com/hwhc/hlc_server/util"
 	"github.com/hwhc/hlc_server/hoo"
 	"github.com/hwhc/hlc_server/log"
 	"github.com/hwhc/hlc_server/mysql"

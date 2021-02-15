@@ -1,6 +1,7 @@
 package util
 
 import (
+	"strings"
 	"time"
 
 	"github.com/EducationEKT/xserver/x_utils/x_time"
@@ -36,4 +37,9 @@ func GetYestdayDateStr() string {
 
 func Get2dayBefore() string {
 	return time.Now().AddDate(0, 0, -2).Format(x_time.DEFAULT_DATE)
+}
+
+//格式化http传输的字符串中间有%20
+func HttpDatetimeStrFormat(datetime string) string{
+	return strings.Replace(datetime,"%20"," ",1)
 }
