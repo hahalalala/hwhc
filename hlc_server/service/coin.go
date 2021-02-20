@@ -19,12 +19,11 @@ import (
 
 
 //是否入金
-func IsInCoin(userId int64,startTime string)  (*x_resp.XRespContainer, *x_err.XErr) {
-	result := make(map[string]bool,0)
+func IsInCoin(startTime string)  (*x_resp.XRespContainer, *x_err.XErr) {
 
 	startTime = util.HttpDatetimeStrFormat(startTime)
 
-	result["isIn"] = persistence.IsInCoin(mysql.Get(),userId,startTime)
+	result := persistence.IsInCoin(mysql.Get(),startTime)
 	return x_resp.Success(result), nil
 }
 

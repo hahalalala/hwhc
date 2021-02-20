@@ -34,7 +34,7 @@ func init() {
 	x_router.Get("/user/api/coins/getAddress", loginFilter, getAddress)            //获取地址
 	x_router.Get("/user/api/coins/incrData",loginFilter,getIncrData)               //获取增值数据
 	x_router.Get("/user/api/coins/incrRecord",loginFilter,getIncrRecord)           //获取增值记录
-	x_router.Get("/user/api/coins/isInCoin",loginFilter,isInCoin)                  //指定时间是否入金
+	x_router.Get("/user/api/coins/isInCoin",isInCoin)                  //指定时间是否入金
 }
 
 
@@ -327,8 +327,6 @@ func transferList(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 }
 
 func isInCoin(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
-	userId := req.MustGetInt64("user_id")
 	startTime := req.MustGetString("start_time")
-
-	return service.IsInCoin(userId, startTime)
+	return service.IsInCoin(startTime)
 }
