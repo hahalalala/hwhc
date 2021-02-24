@@ -30,7 +30,7 @@ func IsInCoin(startTime string)  (*x_resp.XRespContainer, *x_err.XErr) {
 //获取mp增值
 func GetIncrData(userId ,coinId int64)  (*x_resp.XRespContainer, *x_err.XErr) {
 
-	result := make(map[string]float64,0)
+	result := make(map[string]interface{},0)
 	result["amountTotal"] = persistence.GetUserAmount(mysql.Get(), userId, coinId)
 	result["yesterdayIncrValue"] = persistence.GetLastAmountIncr(mysql.Get(),userId,coinId)
 	result["totalIncrValue"] = persistence.GetAmountIncrTotal(mysql.Get(),userId,coinId)

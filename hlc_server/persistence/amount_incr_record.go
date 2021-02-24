@@ -53,12 +53,18 @@ func GetAmountIncrByDate(xmysql  *mysql.XMySQL,userId ,coinId int64,dateStr stri
 
 
 //根据时间获取增值
-func GetLastAmountIncr(xmysql  *mysql.XMySQL,userId ,coinId int64) float64 {
-	sqlstr := "SELECT incr_value FROM amount_incr_record WHERE user_id = ? AND coin_id = ? ORDER BY id DESC LIMIT 1 "
+func GetLastAmountIncr(xmysql  *mysql.XMySQL,userId ,coinId int64) map[string]interface{} {
+	sqlstr := "SELECT incr_value,now_amount_price FROM amount_incr_record WHERE user_id = ? AND coin_id = ? ORDER BY id DESC LIMIT 1 "
 	row :=xmysql.QueryRow(sqlstr,userId,coinId)
 	var incrValue float64
-	_ = row.Scan(&incrValue)
-	return incrValue
+	var nowAmountPrice float64
+	r := make(map[string]interface{})
+	_ = row.Scan(&incrValue,&nowAmountPrice)
+
+	r["incrValue"] = incrValue
+	r["nowAmountPrice"] = nowAmountPrice
+
+	return r
 }
 
 
