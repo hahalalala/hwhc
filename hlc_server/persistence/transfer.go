@@ -146,8 +146,8 @@ func TransferbyId(mysql *mysql.XMySQL, userId, transferId int64, cid int64) type
 func UpdateTransferStatus(mysql *mysql.XMySQL, hash string, user_id int64) bool {
 
 	log.Info(fmt.Sprintf("[debug]UpdateTransferStatus START hash:%s,user_id:%d ", hash, user_id))
-	sqlu := "update transactions set tx_status = 1 where user_id = ? and tx_hash = ?  and tx_status = 0 "
-	result, err := mysql.Exec(sqlu, user_id, hash)
+	sqlu := "update transactions set tx_status = 1,update_time = ? where user_id = ? and tx_hash = ?  and tx_status = 0 "
+	result, err := mysql.Exec(sqlu,xtime.TodayDateTimeStr(), user_id, hash)
 	if err != nil {
 		log.Error(fmt.Sprintf("[debug]UpdateTransferStatus err : %v,hash:%s,user_id:%d", err, hash, user_id))
 		return false
