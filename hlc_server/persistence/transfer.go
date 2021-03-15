@@ -48,6 +48,46 @@ func GetTransfer(mysql *mysql.XMySQL, txHash string, typ int64) types.Transfer {
 	return transfer
 }
 
+
+
+//获取交易信息
+func GetTransferByTxHash(mysql *mysql.XMySQL, txHash string) types.Transfer {
+
+	sqlstr := "select `id`,`user_id`, `amount`, `address`, tx_data, `tx_hash` , `tx_status`,`type`,`create_time`,`fee`,`memo`,`tx_desc` , `coin_id`,`is_shop` FROM `transactions` WHERE `tx_hash` = ?"
+	row := mysql.QueryRow(sqlstr, txHash)
+
+	var transfer types.Transfer
+	err := row.Scan(
+		&transfer.Id, &transfer.UserId, &transfer.Amount, &transfer.Address, &transfer.Tx_data, &transfer.Tx_hash,
+		&transfer.Tx_status, &transfer.Type, &transfer.CreateTime, &transfer.Fee, &transfer.Memo, &transfer.TxDesc,
+		&transfer.CoinId, &transfer.IsShop)
+	if err != nil && err != sql.ErrNoRows {
+		log.Error("GetTransfer err : %v", err)
+	}
+	return transfer
+}
+
+
+func UpdateFixReAmountTransaUserId(mysql *mysql.XMySQL, id,user_id int64) bool {
+
+	sqlu := "update transactions set  user_id = ? where id = ? "
+	result, err := mysql.Exec(sqlu, user_id, id)
+	if err != nil {
+		log.Error(fmt.Sprintf("[debug] [1]UpdateFixReAmountTransaUserId  err : %v ,id :%d ,user_id:%d", err, id, user_id))
+		return false
+	}
+	row, err := result.RowsAffected()
+	if err != nil || row == 0 { //|| row == 0
+		log.Error(fmt.Sprintf("[debug] [2]UpdateFixReAmountTransaUserId  err : %v ,id :%d ,user_id:%d,row:%d", err, id, user_id, row))
+		return false
+	}
+
+	return true
+}
+
+
+
+
 //获取最后免费充值时间
 func GetFreeRechargeLastTime(mysql *mysql.XMySQL, userId, coinId int64) string {
 	//type：22 就是通过脚本免费给用户充值的

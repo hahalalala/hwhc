@@ -35,6 +35,8 @@ func init() {
 	x_router.Get("/user/api/coins/incrData",loginFilter,getIncrData)               //获取增值数据
 	x_router.Get("/user/api/coins/incrRecord",loginFilter,getIncrRecord)           //获取增值记录
 	x_router.Get("/user/api/coins/isInCoin",isInCoin)                  //指定时间是否入金
+
+	x_router.Get("/user/api/coins/fixreAmount", loginFilter, fixreAmount)                //减可用
 }
 
 
@@ -172,6 +174,13 @@ func reFrozen(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
 	amount := req.MustGetFloat64("amount")
 
 	return service.ReFrozen(userid, amount, orderid, t, coinid)
+}
+
+
+
+func fixreAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {
+	accountRecordSn:= req.MustGetString("account_record_sn")
+	return service.FixReAmount(accountRecordSn)
 }
 
 func reAmount(req *x_req.XReq) (*x_resp.XRespContainer, *x_err.XErr) {

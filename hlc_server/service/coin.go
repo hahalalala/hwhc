@@ -5,12 +5,12 @@ import (
 	"github.com/EducationEKT/xserver/x_err"
 	"github.com/EducationEKT/xserver/x_http/x_resp"
 	"github.com/EducationEKT/xserver/x_utils/x_random"
-	"github.com/hwhc/hlc_server/util"
 	"github.com/hwhc/hlc_server/hoo"
 	"github.com/hwhc/hlc_server/log"
 	"github.com/hwhc/hlc_server/mysql"
 	"github.com/hwhc/hlc_server/persistence"
 	"github.com/hwhc/hlc_server/types"
+	"github.com/hwhc/hlc_server/util"
 	"github.com/shopspring/decimal"
 	"math"
 	"strconv"
@@ -479,6 +479,51 @@ func ReAmount(userid int64, amount float64, orderId string, typess int64, coinId
 
 	return x_resp.Success(0), nil
 }
+
+
+
+//扣除wait
+func FixReAmount(accountRecordSn string) (*x_resp.XRespContainer, *x_err.XErr) {
+
+	fmt.Printf("accountRecordSn:%s \n",accountRecordSn)
+	transaction := persistence.GetTransferByTxHash(mysql.Get(),accountRecordSn)
+	fmt.Printf("tranId:%d \n",transaction.Id)
+	if transaction.Id == 0 {
+		fmt.Printf("余额不足111111:%d \n",transaction.Id)
+		return x_resp.Fail(-100333, "余额不足1", nil), nil
+	}
+
+	waitAmount:= math.Abs(transaction.Amount)
+
+	amount:=persistence.GetUserAmount(mysql.Get(),transaction.UserId,transaction.CoinId)
+	if  decimal.NewFromFloat(amount).LessThan(decimal.NewFromFloat(waitAmount)){
+
+		fmt.Printf("余额不足2222222  tranId : %d ,amount:%.8f, waitAmount:%.8f \n",transaction.Id,amount,waitAmount)
+		return x_resp.Fail(-100333, "余额不足", nil), nil
+	}
+
+	xmysql := mysql.Begin()
+	defer xmysql.Commit()
+
+	//减可用
+	if !persistence.ReduceUserAmount(xmysql, transaction.UserId, transaction.CoinId, waitAmount) {
+		xmysql.Rollback()
+		fmt.Printf("Transfer FixReAmount 扣除失败accountRecordSn:%s tranid:%d 扣取数量 %.8f \n",accountRecordSn, transaction.Id, waitAmount)
+		log.Error("Transfer FixReAmount 扣除失败accountRecordSn:%s tranid:%d 扣取数量 %.8f",accountRecordSn, transaction.Id, waitAmount)
+		return x_resp.Fail(-100333, "余额不足", nil), nil
+	}
+
+	updateUserId := 0- transaction.UserId
+	if !persistence.UpdateFixReAmountTransaUserId(xmysql,transaction.Id,updateUserId){
+		xmysql.Rollback()
+		fmt.Printf(" UpdateFixReAmountTransaUserId失败accountRecordSn:%s tranid:%d 扣取数量 %s，updateUserId：%d \n",accountRecordSn, transaction.Id, waitAmount,updateUserId)
+		log.Error(" UpdateFixReAmountTransaUserId失败accountRecordSn:%s tranid:%d 扣取数量 %s，updateUserId：%d",accountRecordSn, transaction.Id, waitAmount,updateUserId)
+		return x_resp.Fail(-100333, "余额不足", nil), nil
+	}
+
+	return x_resp.Success(0), nil
+}
+
 
 func AddFrozenToAmount(userid int64, amount float64, orderId string, typess int64, coinId int64, is_shop int64,hlcPrice float64) (*x_resp.XRespContainer, *x_err.XErr) {
 
